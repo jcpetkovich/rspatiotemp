@@ -1,7 +1,7 @@
 #include <iostream>
 #include <time.h>
 #include <vector>
-#include <omp.h>
+//#include <omp.h>
 #include <Rcpp.h>
 
 #include <opencv2/core/core.hpp>
@@ -70,6 +70,7 @@ std::vector<int> matToVec(cv::Mat &vitData){
     return data;
 }
 
+// [[Rcpp::export]]
 RObject viterbi(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> initProb, std::vector<int> dataV){
 
     //both transition and emission probablities will probably need to be matrices
