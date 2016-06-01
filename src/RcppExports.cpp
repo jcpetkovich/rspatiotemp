@@ -34,20 +34,28 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// updateProb
-List updateProb(List prevData, std::vector<int> dataO, std::vector<int> dataH, int groupSize, int alphabetSizeO, int alphabetSizeH);
-RcppExport SEXP rspatiotemp_updateProb(SEXP prevDataSEXP, SEXP dataOSEXP, SEXP dataHSEXP, SEXP groupSizeSEXP, SEXP alphabetSizeOSEXP, SEXP alphabetSizeHSEXP) {
+// simulateHid
+NumericVector simulateHid(List probMatX, std::vector<int> dataObs, int groupSize, int alphabetSizeO, int alphabetSizeH);
+RcppExport SEXP rspatiotemp_simulateHid(SEXP probMatXSEXP, SEXP dataObsSEXP, SEXP groupSizeSEXP, SEXP alphabetSizeOSEXP, SEXP alphabetSizeHSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< List >::type prevData(prevDataSEXP);
-    Rcpp::traits::input_parameter< std::vector<int> >::type dataO(dataOSEXP);
-    Rcpp::traits::input_parameter< std::vector<int> >::type dataH(dataHSEXP);
+    Rcpp::traits::input_parameter< List >::type probMatX(probMatXSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type dataObs(dataObsSEXP);
     Rcpp::traits::input_parameter< int >::type groupSize(groupSizeSEXP);
     Rcpp::traits::input_parameter< int >::type alphabetSizeO(alphabetSizeOSEXP);
     Rcpp::traits::input_parameter< int >::type alphabetSizeH(alphabetSizeHSEXP);
-    __result = Rcpp::wrap(updateProb(prevData, dataO, dataH, groupSize, alphabetSizeO, alphabetSizeH));
+    __result = Rcpp::wrap(simulateHid(probMatX, dataObs, groupSize, alphabetSizeO, alphabetSizeH));
     return __result;
+END_RCPP
+}
+// tt
+void tt();
+RcppExport SEXP rspatiotemp_tt() {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    tt();
+    return R_NilValue;
 END_RCPP
 }
 // forward
@@ -66,9 +74,9 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// forwardVec
-RObject forwardVec(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<double> initProb, std::vector<int> dataO, std::vector<int> dataH);
-RcppExport SEXP rspatiotemp_forwardVec(SEXP transProbSEXP, SEXP emisProbSEXP, SEXP initProbSEXP, SEXP dataOSEXP, SEXP dataHSEXP) {
+// viterbiProbVal
+RObject viterbiProbVal(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<double> initProb, std::vector<int> dataO, std::vector<int> dataH);
+RcppExport SEXP rspatiotemp_viterbiProbVal(SEXP transProbSEXP, SEXP emisProbSEXP, SEXP initProbSEXP, SEXP dataOSEXP, SEXP dataHSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -77,7 +85,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std:: vector<double> >::type initProb(initProbSEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type dataO(dataOSEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type dataH(dataHSEXP);
-    __result = Rcpp::wrap(forwardVec(transProb, emisProb, initProb, dataO, dataH));
+    __result = Rcpp::wrap(viterbiProbVal(transProb, emisProb, initProb, dataO, dataH));
     return __result;
 END_RCPP
 }
@@ -106,6 +114,142 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::vector<double> >::type initProb(initProbSEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type dataV(dataVSEXP);
     __result = Rcpp::wrap(train(transProb, emisProb, initProb, dataV));
+    return __result;
+END_RCPP
+}
+// runSAX
+RObject runSAX(std::vector<float> orgData, int segmentSize, int alphabetSize, bool iSAX);
+RcppExport SEXP rspatiotemp_runSAX(SEXP orgDataSEXP, SEXP segmentSizeSEXP, SEXP alphabetSizeSEXP, SEXP iSAXSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<float> >::type orgData(orgDataSEXP);
+    Rcpp::traits::input_parameter< int >::type segmentSize(segmentSizeSEXP);
+    Rcpp::traits::input_parameter< int >::type alphabetSize(alphabetSizeSEXP);
+    Rcpp::traits::input_parameter< bool >::type iSAX(iSAXSEXP);
+    __result = Rcpp::wrap(runSAX(orgData, segmentSize, alphabetSize, iSAX));
+    return __result;
+END_RCPP
+}
+// runNormData
+RObject runNormData(std::vector<float> data);
+RcppExport SEXP rspatiotemp_runNormData(SEXP dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<float> >::type data(dataSEXP);
+    __result = Rcpp::wrap(runNormData(data));
+    return __result;
+END_RCPP
+}
+// runToPAA
+RObject runToPAA(std::vector<float> data, int segSize);
+RcppExport SEXP rspatiotemp_runToPAA(SEXP dataSEXP, SEXP segSizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<float> >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< int >::type segSize(segSizeSEXP);
+    __result = Rcpp::wrap(runToPAA(data, segSize));
+    return __result;
+END_RCPP
+}
+// runToSAX
+RObject runToSAX(std::vector<float> data, int brkPtNum);
+RcppExport SEXP rspatiotemp_runToSAX(SEXP dataSEXP, SEXP brkPtNumSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<float> >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< int >::type brkPtNum(brkPtNumSEXP);
+    __result = Rcpp::wrap(runToSAX(data, brkPtNum));
+    return __result;
+END_RCPP
+}
+// fact
+void fact(int num, bool add);
+RcppExport SEXP rspatiotemp_fact(SEXP numSEXP, SEXP addSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< int >::type num(numSEXP);
+    Rcpp::traits::input_parameter< bool >::type add(addSEXP);
+    fact(num, add);
+    return R_NilValue;
+END_RCPP
+}
+// count
+NumericMatrix count(std::vector<int> dataO, std::vector<int> dataH, int oSize, int hSize);
+RcppExport SEXP rspatiotemp_count(SEXP dataOSEXP, SEXP dataHSEXP, SEXP oSizeSEXP, SEXP hSizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<int> >::type dataO(dataOSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type dataH(dataHSEXP);
+    Rcpp::traits::input_parameter< int >::type oSize(oSizeSEXP);
+    Rcpp::traits::input_parameter< int >::type hSize(hSizeSEXP);
+    __result = Rcpp::wrap(count(dataO, dataH, oSize, hSize));
+    return __result;
+END_RCPP
+}
+// cosMeasure
+double cosMeasure(NumericMatrix tabTrained, std::vector<int> testObs, std::vector<int> testHid, int testOSize, int testHSize);
+RcppExport SEXP rspatiotemp_cosMeasure(SEXP tabTrainedSEXP, SEXP testObsSEXP, SEXP testHidSEXP, SEXP testOSizeSEXP, SEXP testHSizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericMatrix >::type tabTrained(tabTrainedSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type testObs(testObsSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type testHid(testHidSEXP);
+    Rcpp::traits::input_parameter< int >::type testOSize(testOSizeSEXP);
+    Rcpp::traits::input_parameter< int >::type testHSize(testHSizeSEXP);
+    __result = Rcpp::wrap(cosMeasure(tabTrained, testObs, testHid, testOSize, testHSize));
+    return __result;
+END_RCPP
+}
+// distribution
+NumericVector distribution(NumericMatrix tabTrained, std::vector<int> testObs, std::vector<int> testHid, int testOSize, int testHSize, int step, int subSeqSize);
+RcppExport SEXP rspatiotemp_distribution(SEXP tabTrainedSEXP, SEXP testObsSEXP, SEXP testHidSEXP, SEXP testOSizeSEXP, SEXP testHSizeSEXP, SEXP stepSEXP, SEXP subSeqSizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericMatrix >::type tabTrained(tabTrainedSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type testObs(testObsSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type testHid(testHidSEXP);
+    Rcpp::traits::input_parameter< int >::type testOSize(testOSizeSEXP);
+    Rcpp::traits::input_parameter< int >::type testHSize(testHSizeSEXP);
+    Rcpp::traits::input_parameter< int >::type step(stepSEXP);
+    Rcpp::traits::input_parameter< int >::type subSeqSize(subSeqSizeSEXP);
+    __result = Rcpp::wrap(distribution(tabTrained, testObs, testHid, testOSize, testHSize, step, subSeqSize));
+    return __result;
+END_RCPP
+}
+// E
+double E(std::vector<int> v, std::vector<int> h, std::vector<double> a, std::vector<double> b, NumericMatrix w);
+RcppExport SEXP rspatiotemp_E(SEXP vSEXP, SEXP hSEXP, SEXP aSEXP, SEXP bSEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<int> >::type v(vSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type h(hSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type a(aSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type b(bSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type w(wSEXP);
+    __result = Rcpp::wrap(E(v, h, a, b, w));
+    return __result;
+END_RCPP
+}
+// F
+double F(std::vector<int> v, int hSize, std::vector<double> a, std::vector<double> b, NumericMatrix w);
+RcppExport SEXP rspatiotemp_F(SEXP vSEXP, SEXP hSizeSEXP, SEXP aSEXP, SEXP bSEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<int> >::type v(vSEXP);
+    Rcpp::traits::input_parameter< int >::type hSize(hSizeSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type a(aSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type b(bSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type w(wSEXP);
+    __result = Rcpp::wrap(F(v, hSize, a, b, w));
     return __result;
 END_RCPP
 }

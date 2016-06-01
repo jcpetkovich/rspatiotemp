@@ -9,16 +9,20 @@ createProbMatX <- function(dataO, dataH, groupSize, alphabetSizeO, alphabetSizeH
     .Call('rspatiotemp_createProbMatX', PACKAGE = 'rspatiotemp', dataO, dataH, groupSize, alphabetSizeO, alphabetSizeH)
 }
 
-updateProb <- function(prevData, dataO, dataH, groupSize, alphabetSizeO, alphabetSizeH) {
-    .Call('rspatiotemp_updateProb', PACKAGE = 'rspatiotemp', prevData, dataO, dataH, groupSize, alphabetSizeO, alphabetSizeH)
+simulateHid <- function(probMatX, dataObs, groupSize, alphabetSizeO, alphabetSizeH) {
+    .Call('rspatiotemp_simulateHid', PACKAGE = 'rspatiotemp', probMatX, dataObs, groupSize, alphabetSizeO, alphabetSizeH)
+}
+
+tt <- function() {
+    invisible(.Call('rspatiotemp_tt', PACKAGE = 'rspatiotemp'))
 }
 
 forward <- function(transProb, emisProb, initProb, dataO, dataH, indexH) {
     .Call('rspatiotemp_forward', PACKAGE = 'rspatiotemp', transProb, emisProb, initProb, dataO, dataH, indexH)
 }
 
-forwardVec <- function(transProb, emisProb, initProb, dataO, dataH) {
-    .Call('rspatiotemp_forwardVec', PACKAGE = 'rspatiotemp', transProb, emisProb, initProb, dataO, dataH)
+viterbiProbVal <- function(transProb, emisProb, initProb, dataO, dataH) {
+    .Call('rspatiotemp_viterbiProbVal', PACKAGE = 'rspatiotemp', transProb, emisProb, initProb, dataO, dataH)
 }
 
 viterbi <- function(transProb, emisProb, initProb, dataV) {
@@ -27,5 +31,85 @@ viterbi <- function(transProb, emisProb, initProb, dataV) {
 
 train <- function(transProb, emisProb, initProb, dataV) {
     .Call('rspatiotemp_train', PACKAGE = 'rspatiotemp', transProb, emisProb, initProb, dataV)
+}
+
+#' Convert a time series into a SAX Word.
+#' @title Convert to SAX (runSAX)
+#' @param orgData A vector of time series data to be converted to a SAX Word.
+#' @param segmentSize The size of each segment taken when converting to SAX Word.
+#' @param alphabetSize The size of the alphabet for classification of PAAs to SAX Words.
+#' @param iSAX False: returns only the SAX Word. True: returns SAX Word and Cardinality.
+#' @return A Vector that contains the SAX Word and if iSAX = true a Vector that contains its corresponding Cardinality.
+runSAX <- function(orgData, segmentSize, alphabetSize, iSAX = FALSE) {
+    .Call('rspatiotemp_runSAX', PACKAGE = 'rspatiotemp', orgData, segmentSize, alphabetSize, iSAX)
+}
+
+runNormData <- function(data) {
+    .Call('rspatiotemp_runNormData', PACKAGE = 'rspatiotemp', data)
+}
+
+runToPAA <- function(data, segSize) {
+    .Call('rspatiotemp_runToPAA', PACKAGE = 'rspatiotemp', data, segSize)
+}
+
+runToSAX <- function(data, brkPtNum) {
+    .Call('rspatiotemp_runToSAX', PACKAGE = 'rspatiotemp', data, brkPtNum)
+}
+
+fact <- function(num, add = TRUE) {
+    invisible(.Call('rspatiotemp_fact', PACKAGE = 'rspatiotemp', num, add))
+}
+
+#' Count the number of times an Observed state 'm' is followed by a Hidden Symbol 'n'
+#' @title Count Occurrences (count)
+#' @param dataO A vector containing observed data
+#' @param dataH A vector containing hidden data
+#' @param oSize The alphabet size/cardinality of the observed data
+#' @param hSize The alphabet size/cardinality of the hidden data
+#' @return A NumericMatrix of times each combination of Observed followed by Hidden has occured
+#' @export
+count <- function(dataO, dataH, oSize, hSize) {
+    .Call('rspatiotemp_count', PACKAGE = 'rspatiotemp', dataO, dataH, oSize, hSize)
+}
+
+#' A causality measurement between two sets of data
+#' @title Causality Measurement (cosMeasure)
+#' @param tabTrained A NumericMatrix returned from the 'count' function for the "training" data
+#' @param testObs A vector containing the test observed data
+#' @param testHid A vector containing the test hidden data
+#' @param testOSize The alphabet size/cardinality of the observed data
+#' @param testHSize The alphabet size/cardinality of the hidden data
+#' @export
+cosMeasure <- function(tabTrained, testObs, testHid, testOSize, testHSize) {
+    .Call('rspatiotemp_cosMeasure', PACKAGE = 'rspatiotemp', tabTrained, testObs, testHid, testOSize, testHSize)
+}
+
+distribution <- function(tabTrained, testObs, testHid, testOSize, testHSize, step, subSeqSize) {
+    .Call('rspatiotemp_distribution', PACKAGE = 'rspatiotemp', tabTrained, testObs, testHid, testOSize, testHSize, step, subSeqSize)
+}
+
+#' Compute energy of a binary vector of visible data and a binary vector of hidden data
+#' @title Energy (E)
+#' @param v A vector containing the binary visible data
+#' @param h A vector containing the binary hidden data
+#' @param a A vector containing the bias values for the visible data
+#' @param b A vector containing the bias values for the hidden data
+#' @param w A matrix containing the weights between the visible and hidden data
+#' @return A double value. The energy of the binary vector of visible data and binary vector of hidden data
+E <- function(v, h, a, b, w) {
+    .Call('rspatiotemp_E', PACKAGE = 'rspatiotemp', v, h, a, b, w)
+}
+
+#' Compute free energy of a binary vector of visible data for all possible hidden data of chosen size
+#' @title Free Energy (F)
+#' @param v A vector containing the binary visible data
+#' @param hSize The size of vector containing the hidden data
+#' @param a A vector containing the bias values for the visible data
+#' @param b A vector containing the bias values for the hidden data
+#' @param w A matrix containing the weights between the visible and hidden data
+#' @return A double value. The free energy for that vector of visible data
+#' @export
+F <- function(v, hSize, a, b, w) {
+    .Call('rspatiotemp_F', PACKAGE = 'rspatiotemp', v, hSize, a, b, w)
 }
 

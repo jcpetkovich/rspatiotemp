@@ -1,16 +1,11 @@
 #include <iostream>
 #include <math.h>
 #include <omp.h>
+#include <time.h>
 #include <RcppArmadillo.h>
 #include <Rcpp.h>
 
 using namespace Rcpp;
-
-//Possibility for additional training after initial training
-//Baye's Theorem? (Probably won't)
-//Instead return the vector of the size for each row of probabilities.
-//Calculate new probability from there
-
 
 //Convert Original data into viterbi friendly form, by taking the groupings and giving it the new alphabetSize
 // [[Rcpp::export]]
@@ -63,103 +58,175 @@ List createProbMat(std::vector<int> data, int groupSize, int alphabetSize){
   }
   return List::create(Named("Probability") = probMat, Named("Counter") = counter, Named("AlphabetSize") = alphabetSize, Named("GroupSize") = groupSize);
 }
-
-//createProbMat(std::vector<int> Observed Data, std::vector<int> Hidden Data, int Group Size, int Observed Alphabet Size, int Hidden Alphabet Size)
 // [[Rcpp::export]]
 List createProbMatX(std::vector<int> dataO, std::vector<int> dataH, int groupSize, int alphabetSizeO, int alphabetSizeH){
-  int rowSize = std::pow(alphabetSizeO,groupSize);
-  List transData = createProbMat(dataH,groupSize,alphabetSizeH);
-  arma::mat emisProb(rowSize, alphabetSizeH);
-  arma::vec counter(rowSize);
-  counter.zeros();
-  emisProb.zeros();
+  arma::mat transProb(alphabetSizeH,alphabetSizeH);
+  arma::mat emisProb(pow(alphabetSizeO,groupSize),alphabetSizeH);
+  arma::mat revEmisProb(alphabetSizeH,pow(alphabetSizeO,groupSize));
 
-  int tile = 4096; //tbd
+  transProb.zeros();
+  emisProb.zeros();
+  revEmisProb.zeros();
+
+  std::vector<int> transCounter;
+  transCounter.reserve(alphabetSizeH);
+  transCounter.resize(alphabetSizeH);
+
+  std::vector<int> emisCounter;
+  emisCounter.reserve(alphabetSizeH);
+  emisCounter.resize(alphabetSizeH);
+
+  std::vector<int> revEmisCounter;
+  revEmisCounter.reserve((int)pow(alphabetSizeO,groupSize));
+  revEmisCounter.resize((int)pow(alphabetSizeO,groupSize));
+
+  int tile = 4096;
 #pragma omp parallel for
-  for(int ii = 0; ii < (dataO.size() - groupSize); ii+=tile){
-    for(int i = ii; i < (ii+tile) && i < (dataO.size() - groupSize + 1); i++){
-      int indexRow = 0;
-      for(int k = 0; k < groupSize; k++)
-        indexRow += dataO.at(k+i) * std::pow(alphabetSizeO,groupSize - k - 1);
-      emisProb(indexRow,dataH.at(i+1))++;
-      counter(indexRow)++;
+  for(int ii = 1; ii < dataH.size();ii+=tile){
+    for(int i = ii; i < (ii+tile) && i < dataH.size(); i++){
+      //transition (x given y), transProb(x,y)
+      transProb.at(dataH.at(i),dataH.at(i-1))++;
+      transCounter[dataH.at(i-1)]++;
+      //emission (z given x), emisProb(z,x)
+      if(i>= groupSize-1){
+        int index = 0;
+        for(int k = 0; k < groupSize;k++)
+          index += dataO.at(i-k)*pow(alphabetSizeO,k);
+        emisProb(index,dataH.at(i))++;
+        emisCounter[dataH.at(i)]++;
+        revEmisProb(dataH.at(i),index)++;
+        revEmisCounter[index]++;
+      }
     }
   }
-#pragma omp parallel for
-  for(int ii = 0; ii < rowSize; ii+=tile){
-    for(int i = ii; i < (ii+tile) && i < rowSize; i++){
-      if(counter(i) != 0)
-        emisProb.row(i) /= counter(i);
-    }
+
+  for(int i = 0; i < pow(alphabetSizeO,groupSize); i++){
+    if(revEmisCounter[i]!=0)
+      revEmisProb.col(i) /= revEmisCounter[i];
   }
-  return List::create(Named("Transition") = transData, Named("Emission") = List::create(Named("Probability") = emisProb, Named("Counter") = counter, Named("AlphabetSize") = alphabetSizeO, Named("GroupSize") = groupSize));
+  for(int i = 0; i < alphabetSizeH; i++){
+    if(transCounter[i]!=0)
+      transProb.col(i) /= transCounter[i];
+    if(emisCounter[i]!=0)
+      emisProb.col(i) /= emisCounter[i];
+  }
+  return List::create(Named("TransProb") = wrap(transProb), Named("TransCount") = wrap(transCounter), Named("EmisProb") = wrap(emisProb), Named("EmisCount") = wrap(emisCounter), Named("RevEmisProb") = wrap(revEmisProb), Named("RevEmisCount") = wrap(revEmisCounter));
 }
 
-//update probabilities. input previously calculated probabilities and new parameters to update the previous probabilities
+/*
+ //update probabilities. input previously calculated probabilities and new parameters to update the previous probabilities
+ // [[Rcpp::export]]
+ List updateProb(List prevData, std::vector<int> dataO, std::vector<int> dataH, int groupSize, int alphabetSizeO, int alphabetSizeH){
+ List prevTrans = prevData[0];
+ List prevEmis = prevData[1];
+ int prevASizeH = prevTrans[2];
+ int prevASizeO = prevEmis[2];
+ int prevGSize = prevTrans[3];
+ if((prevASizeH != alphabetSizeH)||(prevASizeO != alphabetSizeO)||(prevGSize != groupSize)){
+ //Rcerr<<"Something went wrong, one or more of the sizes don't match\n";
+ return prevData;
+ }
+ else{
+ List newData = createProbMatX(dataO,dataH,groupSize,alphabetSizeO,alphabetSizeH);
+ arma::mat prevTransProb = prevTrans[0];
+ arma::vec prevTransCount = prevTrans[1];
+ arma::mat prevEmisProb = prevEmis[0];
+ arma::vec prevEmisCount = prevEmis[1];
+
+ List newTrans = newData[0];
+ List newEmis = newData[1];
+ arma::mat newTransProb = newTrans[0];
+ arma::vec newTransCount = newTrans[1];
+ arma::mat newEmisProb = newEmis[0];
+ arma::vec newEmisCount = newEmis[1];
+
+ int tile = 4096; //tbd
+
+#pragma omp parallel for
+ for(int ii = 0; ii < prevTransProb.n_rows; ii+=tile){
+ for(int i = ii; i < (ii+tile) && i < prevTransProb.n_rows; i++){
+ prevTransProb.row(i) *= prevTransCount.at(i);
+ newTransProb.row(i) *= newTransCount.at(i);
+ }
+ }
+#pragma omp parallel for
+ for(int ii = 0; ii < prevEmisProb.n_rows; ii+=tile){
+ for(int i = 0; i < (ii+tile) && i < prevEmisProb.n_rows;i++){
+ prevEmisProb.row(i) *= prevEmisCount.at(i);
+ newEmisProb.row(i) *= newEmisCount.at(i);
+ }
+ }
+ prevTransProb += newTransProb;
+ prevEmisProb += newEmisProb;
+ prevTransCount += newTransCount;
+ prevEmisCount += newEmisCount;
+
+#pragma omp parallel for
+ for(int ii = 0; ii < prevTransProb.n_rows; ii+=tile){
+ for(int i = ii; i < (ii+tile) && i < prevTransProb.n_rows; i++){
+ if(prevTransCount.at(i) != 0)
+ prevTransProb.row(i) /= prevTransCount.at(i);
+ }
+ }
+
+#pragma omp parallel for
+ for(int ii = 0; ii < prevEmisProb.n_rows; ii+=tile){
+ for(int i = 0; i < (ii+tile) && i < prevEmisProb.n_rows;i++){
+ if(prevEmisCount.at(i) != 0)
+ prevEmisProb.row(i) /= prevEmisCount.at(i);
+ }
+ }
+
+ List transData = List::create(Named("Probability") = prevTransProb, Named("Counter") = prevTransCount, Named("AlphabetSize") = prevASizeH, Named("GroupSize") = prevGSize);
+ List emisData = List::create(Named("Probability") = prevEmisProb, Named("Counter") = prevEmisCount, Named("AlphabetSize") = prevASizeO, Named("GroupSize") = prevGSize);
+ return List::create(Named("Transition") = transData, Named("Emission") = emisData);
+ }
+ }*/
+
 // [[Rcpp::export]]
-List updateProb(List prevData, std::vector<int> dataO, std::vector<int> dataH, int groupSize, int alphabetSizeO, int alphabetSizeH){
-  List prevTrans = prevData[0];
-  List prevEmis = prevData[1];
-  int prevASizeH = prevTrans[2];
-  int prevASizeO = prevEmis[2];
-  int prevGSize = prevTrans[3];
-  if((prevASizeH != alphabetSizeH)||(prevASizeO != alphabetSizeO)||(prevGSize != groupSize)){
-    Rcerr<<"Something went wrong, one or more of the sizes don't match\n";
-    return prevData;
+NumericVector simulateHid(List probMatX, std::vector<int> dataObs, int groupSize, int alphabetSizeO, int alphabetSizeH){
+  std::vector<int> simHid;
+  simHid.reserve(dataObs.size());
+  simHid.resize(dataObs.size());
+
+  NumericMatrix revEmisProb = probMatX.at(4);
+
+  srand (time(NULL));
+  //initial values
+  for(int i = 0; i < groupSize-1; i++)
+    simHid.at(i) = rand() % alphabetSizeH + 0;
+
+  int tile = 4096; //tbd
+
+  //simulate remaining based on revEmisProb and rng
+#pragma omp parallel for
+  for(int ii = 0; ii < dataObs.size()-groupSize;ii+=tile){
+    for(int i = ii; i < (ii+tile) && i < dataObs.size()-groupSize; i++){
+      int index = 0;
+
+      for(int g = 0; g < groupSize; g++)
+        index += dataObs.at(i+g)*pow(alphabetSizeO,groupSize-g-1);
+
+      float randNum = (float)(rand() % 101 + 0)/100;
+      float culmProb = 0;
+
+      for(int k = 0; k < alphabetSizeH; k++){
+        culmProb += revEmisProb.at(k,index);
+
+        if(culmProb >= randNum){
+          simHid.at(i+groupSize-1) = k;
+          break;
+        }
+      }
+    }
   }
-  else{
-    List newData = createProbMatX(dataO,dataH,groupSize,alphabetSizeO,alphabetSizeH);
-    arma::mat prevTransProb = prevTrans[0];
-    arma::vec prevTransCount = prevTrans[1];
-    arma::mat prevEmisProb = prevEmis[0];
-    arma::vec prevEmisCount = prevEmis[1];
+  return wrap(simHid);
+}
 
-    List newTrans = newData[0];
-    List newEmis = newData[1];
-    arma::mat newTransProb = newTrans[0];
-    arma::vec newTransCount = newTrans[1];
-    arma::mat newEmisProb = newEmis[0];
-    arma::vec newEmisCount = newEmis[1];
-
-    int tile = 4096; //tbd
-
-#pragma omp parallel for
-    for(int ii = 0; ii < prevTransProb.n_rows; ii+=tile){
-      for(int i = ii; i < (ii+tile) && i < prevTransProb.n_rows; i++){
-        prevTransProb.row(i) *= prevTransCount.at(i);
-        newTransProb.row(i) *= newTransCount.at(i);
-      }
-    }
-#pragma omp parallel for
-    for(int ii = 0; ii < prevEmisProb.n_rows; ii+=tile){
-      for(int i = 0; i < (ii+tile) && i < prevEmisProb.n_rows;i++){
-        prevEmisProb.row(i) *= prevEmisCount.at(i);
-        newEmisProb.row(i) *= newEmisCount.at(i);
-      }
-    }
-    newTransProb += prevTransProb;
-    newEmisProb += prevEmisProb;
-    newTransCount += prevTransCount;
-    newEmisCount += prevEmisCount;
-
-#pragma omp parallel for
-    for(int ii = 0; ii < prevTransProb.n_rows; ii+=tile){
-      for(int i = ii; i < (ii+tile) && i < prevTransProb.n_rows; i++){
-        if(newTransCount.at(i) != 0)
-          newTransProb.row(i) /= newTransCount.at(i);
-      }
-    }
-
-#pragma omp parallel for
-    for(int ii = 0; ii < prevEmisProb.n_rows; ii+=tile){
-      for(int i = 0; i < (ii+tile) && i < prevEmisProb.n_rows;i++){
-        if(newEmisCount.at(i) != 0)
-          newEmisProb.row(i) /= newEmisCount.at(i);
-      }
-    }
-
-    List transData = List::create(Named("Probability") = newTransProb, Named("Counter") = newTransCount, Named("AlphabetSize") = prevASizeH, Named("GroupSize") = prevGSize);
-    List emisData = List::create(Named("Probability") = newEmisProb, Named("Counter") = newEmisCount, Named("AlphabetSize") = prevASizeO, Named("GroupSize") = prevGSize);
-    return List::create(Named("Transition") = transData, Named("Emission") = emisData);
+// [[Rcpp::export]]
+void tt(){
+  srand (time(NULL));
+  for(int i = 0; i < 10; i++){
+    std::cout<<rand() % 3 + 0<<std::endl;
   }
 }

@@ -1,6 +1,5 @@
 #include <iostream>
 #include <math.h>
-#include <time.h>
 #include <vector>
 #include <omp.h>
 #include <Rcpp.h>
@@ -97,11 +96,11 @@ std::vector<double> matToMtxDbl(cv::Mat &Data){
 double forward(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<double> initProb, std::vector<int> dataO, int dataH, int indexH){
   //Error Checking
   if(indexH > dataO.size()){
-    Rcerr<<"Error: The index of the hidden data is larger than the size of the observed data\n";
+    Rf_error("The index of the hidden data is larger than the size of the observed data\n");
     return 0;
   }
   if(dataH >= transProb.ncol()){
-    Rcerr<<"Error: Your hidden data value is larger than the alphabet Size\n";
+    Rf_error("Your hidden data value is larger than the alphabet Size\n");
     return 0;
   }
   //End of Error Checking
@@ -111,20 +110,26 @@ double forward(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<dou
   maxLength = indexH-1;
 
   NumericMatrix probForw(maxLength,m);
+  int tile = 10; //tbd
   //initialize alpha Z0
-  for(int z = 0; z < m; z++){
-    probForw.at(0,z) = initProb.at(z) * emisProb.at(dataO.at(0),z);
+#pragma omp parallel for
+  for(int zz = 0; zz < m; zz+=tile){
+    for(int z = zz; z < (zz+tile) && z < m; z++)
+      probForw.at(0,z) = initProb.at(z) * emisProb.at(dataO.at(0),z);
   }
   //recursion alpha Z_k-1
   //a_t
   for(int k = 1; k < maxLength; k++){
     //z_t
-    for(int z = 0; z < m; z++){
-      double sum = 0;
-      //z_(t-1)
-      for(int i = 0; i < m; i++)
-        sum += transProb(z,i) * (probForw.at(k-1,i));
-      probForw.at(k,z) = sum * emisProb.at(dataO.at(k), z);
+#pragma omp parallel for
+    for(int zz = 0; zz < m; zz+=tile){
+      for(int z = zz; z < (zz+tile) && z < m; z++){
+        double sum = 0;
+        //z_(t-1)
+        for(int i = 0; i < m; i++)
+          sum += transProb(z,i) * (probForw.at(k-1,i));
+        probForw.at(k,z) = sum * emisProb.at(dataO.at(k), z);
+      }
     }
   }
   //final
@@ -133,18 +138,21 @@ double forward(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<dou
     sum += transProb(dataH,i) * probForw(maxLength-1,i);
   double result = sum*emisProb.at(dataO.at(maxLength), dataH);
   if(result == 0)
-    Rcout<<"The probability is too small for the double data type to hold\n";
+    Rf_warning("The calculated probability is too small for the double variable type to hold and your result has been rounded to zero");
   return result;
 }
 
 // [[Rcpp::export]]
-RObject forwardVec(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<double> initProb, std::vector<int> dataO, std::vector<int> dataH){
+RObject viterbiProbVal(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<double> initProb, std::vector<int> dataO, std::vector<int> dataH){
   int maxLength = std::min(dataO.size(),dataH.size());
   NumericVector forwProb(maxLength);
   //initial
   forwProb.at(0) = initProb.at(dataH.at(0) * emisProb(dataO.at(0),dataH.at(0)));
-  for(int t = 1; t < maxLength; t++){
-    forwProb.at(t) = emisProb.at(dataO.at(t),dataH.at(t)) * transProb.at(dataH.at(t),dataH.at(t-1)) * forwProb.at(t-1);
+  int tile = 10; //tbd
+#pragma omp parallel for
+  for(int tt = 1; tt < maxLength; tt+= tile){
+    for(int t = tt; t < (tt+tile) && t < maxLength; t++)
+      forwProb.at(t) = emisProb.at(dataO.at(t),dataH.at(t)) * transProb.at(dataH.at(t),dataH.at(t-1)) * forwProb.at(t-1);
   }
   return forwProb;
 }
