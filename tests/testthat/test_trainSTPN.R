@@ -5,6 +5,13 @@ test_that("Count",{
   expect_equal(count(s2,s1,5,4),matrix(c(0,1,0,1,1,3,1,0,0,0,0,2,0,1,1,1,0,2,1,0),5,4))
 })
 
+test_that("Lambda (cosMeasure)",{
+  expect_equal(cosMeasure(count(s2,s1,5,4),s2,s1,5,4),-4.340173294)
+})
+
+test_that("Distribution",{
+  expect_equal(distribution(count(s2,s1,5,4),s2,s1,5,4,1,3), c(-0.7781512504, -1.0280287236, -0.9030900, -0.7781512504, -0.7781512504, -0.84509804,-1.1461280357, -0.9030900, -0.8450980, -1.02118934, -0.7781512504, -0.5563025,-0.7269987279,0))
+})
 test_that("Energy",{
   expect_equal(E(c(1,0,0,1),c(1,1,1),c(2,4,3,1),c(3,5,4),matrix(c(1,3,2,4,5,1,3,1,2,6,4,1),4,3)),-29);
 })

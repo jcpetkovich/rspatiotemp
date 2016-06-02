@@ -4,26 +4,28 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-void fact(int num, std::map<int,int> *factTable, bool add = true){
+std::map<int,int> factTable;
+
+void fact(int num, bool add = true){
   int diff = 1;
   if(add == false)
     diff = -1;
 
   for(int i = 2; i <=num; i++){
-    if(factTable -> find(i) == factTable -> end())
-      factTable -> insert (std::pair<int,int> (i,diff));
+    if(factTable.find(i) == factTable.end())
+      factTable.insert (std::pair<int,int> (i,diff));
 
     else{
-      factTable -> find(i) -> second +=diff;
-      if(factTable -> find(i) -> second == 0)
-        factTable -> erase(i);
+      factTable.find(i) -> second +=diff;
+      if(factTable.find(i) -> second == 0)
+        factTable.erase(i);
     }
   }
 }
 
-double compute(std::map<int,int> *factTable){
+double compute(){
   double val = 0;
-  for(std::map<int,int>::iterator it = factTable -> begin(); it != factTable -> end(); it++)
+  for(std::map<int,int>::iterator it = factTable.begin(); it != factTable.end(); it++)
     val += log10(it -> first)*(it -> second);
   return val;
 }
@@ -67,7 +69,7 @@ NumericMatrix count(std::vector<int> dataO, std::vector<int> dataH, int oSize, i
 //' @export
 // [[Rcpp::export]]
 double cosMeasure(NumericMatrix tabTrained, std::vector<int> testObs, std::vector<int> testHid, int testOSize, int testHSize){
-  std::map<int,int> *factTable;
+
   NumericMatrix tabTest = count(testObs,testHid,testOSize,testHSize);
   /*for(int r = 0; r < testOSize; r++){
    for(int c = 0; c < testHSize; c++){
@@ -76,19 +78,19 @@ double cosMeasure(NumericMatrix tabTrained, std::vector<int> testObs, std::vecto
   }*/
   //#pragma omp parallel for reduction(*:val)
   for(int r = 0; r < testOSize; r++){
-    fact(rowSum(tabTest.row(r)),factTable);
-    fact(rowSum(tabTrained.row(r))+testHSize-1,factTable);
-    fact(rowSum(tabTest.row(r)) + rowSum(tabTrained.row(r))+testHSize-1,factTable,false);
+    fact(rowSum(tabTest.row(r)));
+    fact(rowSum(tabTrained.row(r))+testHSize-1);
+    fact(rowSum(tabTest.row(r)) + rowSum(tabTrained.row(r))+testHSize-1,false);
     for(int c = 0; c < testHSize; c++){
-      fact(tabTrained.at(r,c) + tabTest.at(r,c),factTable);
-      fact(tabTrained.at(r,c),factTable,false);
-      fact(tabTest.at(r,c),factTable,false);
+      fact(tabTrained.at(r,c) + tabTest.at(r,c));
+      fact(tabTrained.at(r,c),false);
+      fact(tabTest.at(r,c),false);
     }
   }
   //print();
-  double val = compute(factTable);
+  double val = compute();
   //Rcout<<compute()<<std::endl;
-  delete[] factTable;
+  factTable.clear();
   return val;
 }
 
