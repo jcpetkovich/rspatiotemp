@@ -7,7 +7,13 @@
 
 using namespace Rcpp;
 
-//Convert Original data into viterbi friendly form, by taking the groupings and giving it the new alphabetSize
+//' Convert a SAX series to another SAX series with chosen group size.
+//' @title DMarkov Convert (convert)
+//' @param data A vector containing the SAX series to be converted
+//' @param groupSize The chosen group size for sampling from original series
+//' @param alphabetSize The original alphabet size of the inputted SAX data
+//' @return A vector containing the new SAX series of alphabet size 'alphabetSize'^'groupSize'
+//' @export
 // [[Rcpp::export]]
 RObject convert(std::vector<int> data, int groupSize, int alphabetSize){
   std::vector<int> convertData;
@@ -29,35 +35,15 @@ RObject convert(std::vector<int> data, int groupSize, int alphabetSize){
   return wrap(convertData);
 }
 
-//This only output transition probabilities for itself
-//It takes in one sequence of data and produces and matrix of probabilities to predict the next values in the same set of data
-List createProbMat(std::vector<int> data, int groupSize, int alphabetSize){
-  //create empty Matrix for prob storing
-  int rowSize = std::pow(alphabetSize,groupSize);
-  arma::mat probMat(rowSize,alphabetSize);
-  arma::vec counter(rowSize);
-  probMat.zeros();
-  counter.zeros();
-  int tile = 4096; //tbd
-#pragma omp parallel for
-  for(int ii = 0; ii < (data.size() - groupSize); ii+=tile){
-    for(int i = ii; i < (ii+tile) && i < (data.size()-groupSize); i++){
-      int indexRow = 0;
-      for(int k = 0; k < groupSize; k++)
-        indexRow += data.at(k+i) * std::pow(alphabetSize,groupSize - k - 1);
-      probMat(indexRow, data.at(i+groupSize))++;
-      counter(indexRow)++;
-    }
-  }
-#pragma omp parallel for
-  for(int ii = 0; ii < rowSize; ii+=tile){
-    for(int i = ii; i < (ii+tile) && i < rowSize; i++){
-      if(counter(i) != 0)
-        probMat.row(i) /= counter(i);
-    }
-  }
-  return List::create(Named("Probability") = probMat, Named("Counter") = counter, Named("AlphabetSize") = alphabetSize, Named("GroupSize") = groupSize);
-}
+//' Create new ProbMatX object from a set of observed and hidden data. This ProbMatX object contains transition, emission and reverse emission probabilities
+//' @title Create Probability Matrix X (createProbMatX)
+//' @param dataO A vector containing the observed data in SAX
+//' @param dataH A vector containing the hidden data in SAX
+//' @param groupSize The chosen group size for DMarkov
+//' @param alphabetSizeO The original alphabet size of the observed data
+//' @param alphabetSizeH The original alphabet size of the hidden data
+//' @return A ProbMatX object. A list containing the transition, emission and reverse emission probabilities trained from the input data
+//' @export
 // [[Rcpp::export]]
 List createProbMatX(std::vector<int> dataO, std::vector<int> dataH, int groupSize, int alphabetSizeO, int alphabetSizeH){
   arma::mat transProb(alphabetSizeH,alphabetSizeH);
@@ -113,76 +99,73 @@ List createProbMatX(std::vector<int> dataO, std::vector<int> dataH, int groupSiz
   return List::create(Named("TransProb") = wrap(transProb), Named("TransCount") = wrap(transCounter), Named("EmisProb") = wrap(emisProb), Named("EmisCount") = wrap(emisCounter), Named("RevEmisProb") = wrap(revEmisProb), Named("RevEmisCount") = wrap(revEmisCounter));
 }
 
-/*
- //update probabilities. input previously calculated probabilities and new parameters to update the previous probabilities
- // [[Rcpp::export]]
- List updateProb(List prevData, std::vector<int> dataO, std::vector<int> dataH, int groupSize, int alphabetSizeO, int alphabetSizeH){
- List prevTrans = prevData[0];
- List prevEmis = prevData[1];
- int prevASizeH = prevTrans[2];
- int prevASizeO = prevEmis[2];
- int prevGSize = prevTrans[3];
- if((prevASizeH != alphabetSizeH)||(prevASizeO != alphabetSizeO)||(prevGSize != groupSize)){
- //Rcerr<<"Something went wrong, one or more of the sizes don't match\n";
- return prevData;
- }
- else{
- List newData = createProbMatX(dataO,dataH,groupSize,alphabetSizeO,alphabetSizeH);
- arma::mat prevTransProb = prevTrans[0];
- arma::vec prevTransCount = prevTrans[1];
- arma::mat prevEmisProb = prevEmis[0];
- arma::vec prevEmisCount = prevEmis[1];
 
- List newTrans = newData[0];
- List newEmis = newData[1];
- arma::mat newTransProb = newTrans[0];
- arma::vec newTransCount = newTrans[1];
- arma::mat newEmisProb = newEmis[0];
- arma::vec newEmisCount = newEmis[1];
+//' Update ProbMatX object with more data
+//' @title Update Probability Matrix X (updateProbMatX)
+//' @param prevData The ProbMatX object created from 'createProbMatX' function
+//' @param dataO the new observed data to be updated into the ProbMatX object
+//' @param dataH the new hidden data to be updated into the ProbMatX object
+//' @param groupSize The chosen group size for DMarkov. The groupSize must be the same as the one used when creating the ProbMatX object
+//' @param alphabetSizeO The original alphabet size of the observed data. The alphabetSize must be the same as the one used when creating the ProbMatX object
+//' @param alphabetSizeH The original alphabet size of the hidden data. The alphabetSize must be the same as the one used when creating the ProbMatX object
+//' @return A ProbMatX object. A list containing the updated transition, emission and reverse emission probabilities from the input data
+//' @export
+// [[Rcpp::export]]
+List updateProbMatX(List prevData, std::vector<int> dataO, std::vector<int> dataH, int groupSize, int alphabetSizeO, int alphabetSizeH){
+  List newData = createProbMatX(dataO,dataH,groupSize,alphabetSizeO,alphabetSizeH);
+  arma::mat prevTransProb = as<arma::mat>(prevData.at(0));
+  std::vector<int> prevTransCount = as<std::vector<int>>(prevData.at(1));
+  arma::mat prevEmisProb = as<arma::mat>(prevData.at(2));
+  std::vector<int> prevEmisCount = as<std::vector<int>>(prevData.at(3));
+  arma::mat prevRevEmisProb = as<arma::mat>(prevData.at(4));
+  std::vector<int> prevRevEmisCount = as<std::vector<int>>(prevData.at(5));
 
- int tile = 4096; //tbd
+  arma::mat newTransProb = as<arma::mat>(newData.at(0));
+  std::vector<int> newTransCount = as<std::vector<int>>(newData.at(1));
+  arma::mat newEmisProb = as<arma::mat>(newData.at(2));
+  std::vector<int> newEmisCount = as<std::vector<int>>(newData.at(3));
+  arma::mat newRevEmisProb = as<arma::mat>(newData.at(4));
+  std::vector<int> newRevEmisCount = as<std::vector<int>>(newData.at(5));
 
-#pragma omp parallel for
- for(int ii = 0; ii < prevTransProb.n_rows; ii+=tile){
- for(int i = ii; i < (ii+tile) && i < prevTransProb.n_rows; i++){
- prevTransProb.row(i) *= prevTransCount.at(i);
- newTransProb.row(i) *= newTransCount.at(i);
- }
- }
-#pragma omp parallel for
- for(int ii = 0; ii < prevEmisProb.n_rows; ii+=tile){
- for(int i = 0; i < (ii+tile) && i < prevEmisProb.n_rows;i++){
- prevEmisProb.row(i) *= prevEmisCount.at(i);
- newEmisProb.row(i) *= newEmisCount.at(i);
- }
- }
- prevTransProb += newTransProb;
- prevEmisProb += newEmisProb;
- prevTransCount += newTransCount;
- prevEmisCount += newEmisCount;
+  for(int i = 0; i < pow(alphabetSizeO,groupSize); i++){
+    prevRevEmisProb.col(i) *= prevRevEmisCount[i];
+    newRevEmisProb.col(i) *= newRevEmisCount[i];
+  }
+  for(int i = 0; i < alphabetSizeH; i++){
+    prevTransProb.col(i) *= prevTransCount[i];
+    newTransProb.col(i) *= newTransCount[i];
+    prevEmisProb.col(i) *= prevEmisCount[i];
+    newEmisProb.col(i) *= newEmisCount[i];
+  }
+  prevTransProb+=newTransProb;
+  prevEmisProb+=newEmisProb;
+  prevRevEmisProb+=newRevEmisProb;
 
-#pragma omp parallel for
- for(int ii = 0; ii < prevTransProb.n_rows; ii+=tile){
- for(int i = ii; i < (ii+tile) && i < prevTransProb.n_rows; i++){
- if(prevTransCount.at(i) != 0)
- prevTransProb.row(i) /= prevTransCount.at(i);
- }
- }
+  for(int i = 0; i < pow(alphabetSizeO,groupSize); i++){
+    prevRevEmisCount[i]+=newRevEmisCount[i];
+    if(prevRevEmisCount[i]!=0)
+      prevRevEmisProb.col(i) /= prevRevEmisCount[i];
+  }
+  for(int i = 0; i < alphabetSizeH; i++){
+    prevTransCount[i]+=newTransCount[i];
+    prevEmisCount[i]+=newEmisCount[i];
+    if(prevTransCount[i]!=0)
+      prevTransProb.col(i) /= prevTransCount[i];
+    if(prevEmisCount[i]!=0)
+      prevEmisProb.col(i) /= prevEmisCount[i];
+  }
+  return List::create(Named("TransProb") = wrap(prevTransProb), Named("TransCount") = wrap(prevTransCount), Named("EmisProb") = wrap(prevEmisProb), Named("EmisCount") = wrap(prevEmisCount), Named("RevEmisProb") = wrap(prevRevEmisProb), Named("RevEmisCount") = wrap(prevRevEmisCount));
+}
 
-#pragma omp parallel for
- for(int ii = 0; ii < prevEmisProb.n_rows; ii+=tile){
- for(int i = 0; i < (ii+tile) && i < prevEmisProb.n_rows;i++){
- if(prevEmisCount.at(i) != 0)
- prevEmisProb.row(i) /= prevEmisCount.at(i);
- }
- }
-
- List transData = List::create(Named("Probability") = prevTransProb, Named("Counter") = prevTransCount, Named("AlphabetSize") = prevASizeH, Named("GroupSize") = prevGSize);
- List emisData = List::create(Named("Probability") = prevEmisProb, Named("Counter") = prevEmisCount, Named("AlphabetSize") = prevASizeO, Named("GroupSize") = prevGSize);
- return List::create(Named("Transition") = transData, Named("Emission") = emisData);
- }
- }*/
-
+//' Simulate hidden series given an observed series and using the reverse emission probability from ProbMatX object
+//' @title Simulate Hidden Series (simulateHid)
+//' @param probMatX The ProbMatX object created from 'createProbMatX' function
+//' @param dataObs The observed data used to simulate the hidden data
+//' @param groupSize The groupSize of the DMarkov model. Should be the same as the one used to create ProbMatX object
+//' @param alphabetSizeO The original alphabet size of the observed data. The alphabetSize must be the same as the one used when creating the ProbMatX object
+//' @param alphabetSizeH The original alphabet size of the hidden data. The alphabetSize must be the same as the one used when creating the ProbMatX object
+//' @return A vector containing the simulated hidden data
+//' @export
 // [[Rcpp::export]]
 NumericVector simulateHid(List probMatX, std::vector<int> dataObs, int groupSize, int alphabetSizeO, int alphabetSizeH){
   std::vector<int> simHid;

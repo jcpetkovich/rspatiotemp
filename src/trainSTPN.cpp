@@ -4,41 +4,30 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-std::map<int,int> factTable;
-
-// [[Rcpp::export]]
-void fact(int num, bool add = true){
+void fact(int num, std::map<int,int> *factTable, bool add = true){
   int diff = 1;
   if(add == false)
     diff = -1;
 
   for(int i = 2; i <=num; i++){
-    if(factTable.find(i) == factTable.end())
-      factTable.insert (std::pair<int,int> (i,diff));
+    if(factTable -> find(i) == factTable -> end())
+      factTable -> insert (std::pair<int,int> (i,diff));
 
     else{
-      factTable.find(i) -> second +=diff;
-      if(factTable.find(i) -> second == 0)
-        factTable.erase(i);
+      factTable -> find(i) -> second +=diff;
+      if(factTable -> find(i) -> second == 0)
+        factTable -> erase(i);
     }
   }
 }
 
-double compute(){
+double compute(std::map<int,int> *factTable){
   double val = 0;
-  for(std::map<int,int>::iterator it = factTable.begin(); it != factTable.end(); it++)
+  for(std::map<int,int>::iterator it = factTable -> begin(); it != factTable -> end(); it++)
     val += log10(it -> first)*(it -> second);
   return val;
 }
-void print(){
-  int counter = 1;
-  for(std::map<int,int>::iterator it = factTable.begin(); it != factTable.end(); it++){
-    Rcout<<it -> first<< " = "<<it -> second <<" :: ";
-    counter++;
-    if(counter%5 == 0)
-      Rcout<<std::endl;
-  }
-}
+
 int rowSum(NumericVector rowVec){
   int sum = 0;
 #pragma omp parallel for reduction (+:sum)
@@ -78,6 +67,7 @@ NumericMatrix count(std::vector<int> dataO, std::vector<int> dataH, int oSize, i
 //' @export
 // [[Rcpp::export]]
 double cosMeasure(NumericMatrix tabTrained, std::vector<int> testObs, std::vector<int> testHid, int testOSize, int testHSize){
+  std::map<int,int> *factTable;
   NumericMatrix tabTest = count(testObs,testHid,testOSize,testHSize);
   /*for(int r = 0; r < testOSize; r++){
    for(int c = 0; c < testHSize; c++){
@@ -86,23 +76,33 @@ double cosMeasure(NumericMatrix tabTrained, std::vector<int> testObs, std::vecto
   }*/
   //#pragma omp parallel for reduction(*:val)
   for(int r = 0; r < testOSize; r++){
-    fact(rowSum(tabTest.row(r)));
-    fact(rowSum(tabTrained.row(r))+testHSize-1);
-    fact(rowSum(tabTest.row(r)) + rowSum(tabTrained.row(r))+testHSize-1,false);
+    fact(rowSum(tabTest.row(r)),factTable);
+    fact(rowSum(tabTrained.row(r))+testHSize-1,factTable);
+    fact(rowSum(tabTest.row(r)) + rowSum(tabTrained.row(r))+testHSize-1,factTable,false);
     for(int c = 0; c < testHSize; c++){
-      fact(tabTrained.at(r,c) + tabTest.at(r,c));
-      fact(tabTrained.at(r,c),false);
-      fact(tabTest.at(r,c),false);
+      fact(tabTrained.at(r,c) + tabTest.at(r,c),factTable);
+      fact(tabTrained.at(r,c),factTable,false);
+      fact(tabTest.at(r,c),factTable,false);
     }
   }
   //print();
-  double val = compute();
+  double val = compute(factTable);
   //Rcout<<compute()<<std::endl;
-  factTable.clear();
+  delete[] factTable;
   return val;
 }
 
-//assuming testObs and testHid have same size
+//' Compute the causality measurement between several subsequences and a trained set of data
+//' @title Compute Distribution (distribution)
+//' @param tabTrained Trained count matrix created from 'count' function
+//' @param testObs A vector containing the test observed data
+//' @param testHid A vector containing the test hidden data
+//' @param testOSize The alphabet size of the observed data
+//' @param testHSize The alphabet size of the hidden data
+//' @param step The step size for subsequence sampling
+//' @param subSeqSize The size of each subsequence extracted from test sequence
+//' @return A vector containing the causality measurement (Lambda) of the several small subsequences sampled
+//' @export
 // [[Rcpp::export]]
 NumericVector distribution(NumericMatrix tabTrained, std::vector<int> testObs, std::vector<int> testHid, int testOSize, int testHSize, int step, int subSeqSize){
   std::vector<double> cosMeasDis;
@@ -118,7 +118,7 @@ NumericVector distribution(NumericMatrix tabTrained, std::vector<int> testObs, s
     //Rcout<<"B";
     subSeqHid.assign(testHid.begin()+i,testHid.begin()+i+subSeqSize);
     //Rcout<<"C"<<std::endl;
-    cosMeasDis.at(i) = cosMeasure(tabTrained, subSeqObs,subSeqHid, testOSize, testHSize);
+    cosMeasDis.at(i/step) = cosMeasure(tabTrained, subSeqObs,subSeqHid, testOSize, testHSize);
   }
   //Rcout<<cosMeasDis.size()<<std::endl;
   return wrap(cosMeasDis);
@@ -133,6 +133,7 @@ NumericVector distribution(NumericMatrix tabTrained, std::vector<int> testObs, s
 //' @param b A vector containing the bias values for the hidden data
 //' @param w A matrix containing the weights between the visible and hidden data
 //' @return A double value. The energy of the binary vector of visible data and binary vector of hidden data
+//' @export
 // [[Rcpp::export]]
 double E(std::vector<int> v, std::vector<int> h, std::vector<double> a, std::vector<double> b, NumericMatrix w){
   double val = 0;

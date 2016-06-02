@@ -34,6 +34,22 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// updateProbMatX
+List updateProbMatX(List prevData, std::vector<int> dataO, std::vector<int> dataH, int groupSize, int alphabetSizeO, int alphabetSizeH);
+RcppExport SEXP rspatiotemp_updateProbMatX(SEXP prevDataSEXP, SEXP dataOSEXP, SEXP dataHSEXP, SEXP groupSizeSEXP, SEXP alphabetSizeOSEXP, SEXP alphabetSizeHSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< List >::type prevData(prevDataSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type dataO(dataOSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type dataH(dataHSEXP);
+    Rcpp::traits::input_parameter< int >::type groupSize(groupSizeSEXP);
+    Rcpp::traits::input_parameter< int >::type alphabetSizeO(alphabetSizeOSEXP);
+    Rcpp::traits::input_parameter< int >::type alphabetSizeH(alphabetSizeHSEXP);
+    __result = Rcpp::wrap(updateProbMatX(prevData, dataO, dataH, groupSize, alphabetSizeO, alphabetSizeH));
+    return __result;
+END_RCPP
+}
 // simulateHid
 NumericVector simulateHid(List probMatX, std::vector<int> dataObs, int groupSize, int alphabetSizeO, int alphabetSizeH);
 RcppExport SEXP rspatiotemp_simulateHid(SEXP probMatXSEXP, SEXP dataObsSEXP, SEXP groupSizeSEXP, SEXP alphabetSizeOSEXP, SEXP alphabetSizeHSEXP) {
@@ -164,17 +180,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type brkPtNum(brkPtNumSEXP);
     __result = Rcpp::wrap(runToSAX(data, brkPtNum));
     return __result;
-END_RCPP
-}
-// fact
-void fact(int num, bool add);
-RcppExport SEXP rspatiotemp_fact(SEXP numSEXP, SEXP addSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< int >::type num(numSEXP);
-    Rcpp::traits::input_parameter< bool >::type add(addSEXP);
-    fact(num, add);
-    return R_NilValue;
 END_RCPP
 }
 // count
