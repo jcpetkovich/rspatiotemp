@@ -92,6 +92,16 @@ std::vector<double> matToMtxDbl(cv::Mat &Data){
   return data;
 }
 
+//' Forward algorithm for hidden markov models.
+//' @title Forward Algorithm (forward)
+//' @param transProb A matrix containing the transition probabilites from the hidden markov model
+//' @param emisProb A matrix containing the emission probabilities from the hidden markov model
+//' @param initProb A matrix containing the initial probabilities from the hidden markov model
+//' @param dataO A vector containing the observed sequence of data
+//' @param dataH A single symbol of the hidden data
+//' @param indexH The index at which the single symbol of hidden data above is located in it's original sequence
+//' @return A double(real) value. The probability that the hidden symbol is at 'indexH' given the observed sequence and probabilitiy matrices
+//' @export
 // [[Rcpp::export]]
 double forward(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<double> initProb, std::vector<int> dataO, int dataH, int indexH){
   //Error Checking
@@ -142,6 +152,15 @@ double forward(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<dou
   return result;
 }
 
+//' Compute the probability of that the given observed and hidden sequences occur in a trained system
+//' @title Viterbi Probability Value (viterbiProbVal)
+//' @param transProb A matrix containing the transition probabilites from the hidden markov model
+//' @param emisProb A matrix containing the emission probabilities from the hidden markov model
+//' @param initProb A matrix containing the initial probabilities from the hidden markov model
+//' @param dataO A vector containing the observed sequence of data
+//' @param dataH A vector containing the hidden sequence of data
+//' @return A vector containing the probability to get to each index of the hidden state given the observed state
+//' @export
 // [[Rcpp::export]]
 RObject viterbiProbVal(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<double> initProb, std::vector<int> dataO, std::vector<int> dataH){
   int maxLength = std::min(dataO.size(),dataH.size());
@@ -157,58 +176,45 @@ RObject viterbiProbVal(NumericMatrix transProb, NumericMatrix emisProb, std:: ve
   return forwProb;
 }
 
+//' Determine the most probable hidden sequence given an observed sequence
+//' @param transProb A matrix containing the transition probabilites from the hidden markov model
+//' @param emisProb A matrix containing the emission probabilities from the hidden markov model
+//' @param initProb A matrix containing the initial probabilities from the hidden markov model
+//' @param dataV A vector containing the observed sequence of data
+//' @return A vector containing the most probable sequence of hidden states
+//' @export
 // [[Rcpp::export]]
 RObject viterbi(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> initProb, std::vector<int> dataV){
-
-  //both transition and emission probablities will probably need to be matrices
   cv::Mat trans = cv::Mat(transProb.ncol(),transProb.nrow(),CV_64F, mtxToDbl(transProb)).clone();
-
   cv::Mat emis = cv::Mat(emisProb.ncol(),emisProb.nrow(),CV_64F, mtxToDbl(emisProb)).clone();
-
-  //It is probably okay if the initial Probablities
   cv::Mat init = cv::Mat(1,initProb.size(),CV_64F, vecToDbl(initProb)).clone();
-
-  //also okay if input data is a vector
   int *data = vecToInt(dataV);
   cv::Mat seq = cv::Mat(1,dataV.size(),CV_32S,data);
-
-  //print input data
-  //std::cout<<"input data: ";
-  //for (int j=0;j<seq.cols;j++)
-  //  std::cout << seq.at<int>(0,j);
-  //std::cout << "\n";
-
   cv::Mat vitData;
   CvHMM hmm;
-  //hmm.printModel(trans,emis,init);
   hmm.viterbi(seq.row(0),trans,emis,init,vitData);
-
-  //print viterbi outputs
-  //for (int i=0;i<vitData.cols;i++)
-  //    std::cout << vitData.at<int>(0,i);
-  //std::cout << "\n";
-  //std::cout<<"Output Data: \n";
   return wrap(matToVecInt(vitData));
 }
 
+//' Train Hidden Markov model
+//' @title Train (train)
+//' @param transProb A matrix containing the transition probabilites from the hidden markov model
+//' @param emisProb A matrix containing the emission probabilities from the hidden markov model
+//' @param initProb A matrix containing the initial probabilities from the hidden markov model
+//' @param dataV A vector containing the observed sequence of data
+//' @return A list of new probability matrices
+//' @export
 // [[Rcpp::export]]
 RObject train(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> initProb, std::vector<int> dataV){
-  //both transition and emission probablities will probably need to be matrices
   cv::Mat trans = cv::Mat(transProb.ncol(),transProb.nrow(),CV_64F, mtxToDbl(transProb)).clone();
-
   cv::Mat emis = cv::Mat(emisProb.ncol(),emisProb.nrow(),CV_64F, mtxToDbl(emisProb)).clone();
-
-  //It is probably okay if the initial Probablities
   cv::Mat init = cv::Mat(1,initProb.size(),CV_64F, vecToDbl(initProb)).clone();
-
-  //also okay if input data is a vector
   int *data = vecToInt(dataV);
   cv::Mat seq = cv::Mat(1,dataV.size(),CV_32S,data);
 
   CvHMM hmm;
   int maxIterations = 1000;
   hmm.train(seq,maxIterations,trans,emis,init);
-  //hmm.printModel(trans,emis,init);
 
   NumericVector mtxTrans = wrap(matToMtxDbl(trans));
   mtxTrans.attr("dim") = Dimension(transProb.nrow(),transProb.ncol());

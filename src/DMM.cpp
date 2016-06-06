@@ -17,11 +17,9 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 RObject convert(std::vector<int> data, int groupSize, int alphabetSize){
   std::vector<int> convertData;
-
-  int tile = 4096; //tbd
-
   convertData.reserve(data.size() - groupSize+1);
   convertData.resize(data.size() - groupSize+1);
+  int tile = 4096; //tbd
 
 #pragma omp parallel for
   for(int ii = 0; ii < (data.size()-groupSize+1); ii+= tile){
@@ -67,6 +65,7 @@ List createProbMatX(std::vector<int> dataO, std::vector<int> dataH, int groupSiz
   revEmisCounter.resize((int)pow(alphabetSizeO,groupSize));
 
   int tile = 4096;
+  //counting all occurances and saving them in each matrix
 #pragma omp parallel for
   for(int ii = 1; ii < dataH.size();ii+=tile){
     for(int i = ii; i < (ii+tile) && i < dataH.size(); i++){
@@ -85,7 +84,7 @@ List createProbMatX(std::vector<int> dataO, std::vector<int> dataH, int groupSiz
       }
     }
   }
-
+//divide each column by the number of total occurences to get a probability
   for(int i = 0; i < pow(alphabetSizeO,groupSize); i++){
     if(revEmisCounter[i]!=0)
       revEmisProb.col(i) /= revEmisCounter[i];
@@ -126,7 +125,7 @@ List updateProbMatX(List prevData, std::vector<int> dataO, std::vector<int> data
   std::vector<int> newEmisCount = as<std::vector<int>>(newData.at(3));
   arma::mat newRevEmisProb = as<arma::mat>(newData.at(4));
   std::vector<int> newRevEmisCount = as<std::vector<int>>(newData.at(5));
-
+//expand all probability mats back to a count of occurences
   for(int i = 0; i < pow(alphabetSizeO,groupSize); i++){
     prevRevEmisProb.col(i) *= prevRevEmisCount[i];
     newRevEmisProb.col(i) *= newRevEmisCount[i];
@@ -137,10 +136,11 @@ List updateProbMatX(List prevData, std::vector<int> dataO, std::vector<int> data
     prevEmisProb.col(i) *= prevEmisCount[i];
     newEmisProb.col(i) *= newEmisCount[i];
   }
+  //add all the matrices
   prevTransProb+=newTransProb;
   prevEmisProb+=newEmisProb;
   prevRevEmisProb+=newRevEmisProb;
-
+//convert back to probabilities by dividing by total occurences
   for(int i = 0; i < pow(alphabetSizeO,groupSize); i++){
     prevRevEmisCount[i]+=newRevEmisCount[i];
     if(prevRevEmisCount[i]!=0)
@@ -204,12 +204,4 @@ NumericVector simulateHid(List probMatX, std::vector<int> dataObs, int groupSize
     }
   }
   return wrap(simHid);
-}
-
-// [[Rcpp::export]]
-void tt(){
-  srand (time(NULL));
-  for(int i = 0; i < 10; i++){
-    std::cout<<rand() % 3 + 0<<std::endl;
-  }
 }

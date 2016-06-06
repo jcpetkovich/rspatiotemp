@@ -52,22 +52,52 @@ simulateHid <- function(probMatX, dataObs, groupSize, alphabetSizeO, alphabetSiz
     .Call('rspatiotemp_simulateHid', PACKAGE = 'rspatiotemp', probMatX, dataObs, groupSize, alphabetSizeO, alphabetSizeH)
 }
 
-tt <- function() {
-    invisible(.Call('rspatiotemp_tt', PACKAGE = 'rspatiotemp'))
-}
-
+#' Forward algorithm for hidden markov models.
+#' @title Forward Algorithm (forward)
+#' @param transProb A matrix containing the transition probabilites from the hidden markov model
+#' @param emisProb A matrix containing the emission probabilities from the hidden markov model
+#' @param initProb A matrix containing the initial probabilities from the hidden markov model
+#' @param dataO A vector containing the observed sequence of data
+#' @param dataH A single symbol of the hidden data
+#' @param indexH The index at which the single symbol of hidden data above is located in it's original sequence
+#' @return A double(real) value. The probability that the hidden symbol is at 'indexH' given the observed sequence and probabilitiy matrices
+#' @export
 forward <- function(transProb, emisProb, initProb, dataO, dataH, indexH) {
     .Call('rspatiotemp_forward', PACKAGE = 'rspatiotemp', transProb, emisProb, initProb, dataO, dataH, indexH)
 }
 
+#' Compute the probability of that the given observed and hidden sequences occur in a trained system
+#' @title Viterbi Probability Value (viterbiProbVal)
+#' @param transProb A matrix containing the transition probabilites from the hidden markov model
+#' @param emisProb A matrix containing the emission probabilities from the hidden markov model
+#' @param initProb A matrix containing the initial probabilities from the hidden markov model
+#' @param dataO A vector containing the observed sequence of data
+#' @param dataH A vector containing the hidden sequence of data
+#' @return A vector containing the probability to get to each index of the hidden state given the observed state
+#' @export
 viterbiProbVal <- function(transProb, emisProb, initProb, dataO, dataH) {
     .Call('rspatiotemp_viterbiProbVal', PACKAGE = 'rspatiotemp', transProb, emisProb, initProb, dataO, dataH)
 }
 
+#' Determine the most probable hidden sequence given an observed sequence
+#' @param transProb A matrix containing the transition probabilites from the hidden markov model
+#' @param emisProb A matrix containing the emission probabilities from the hidden markov model
+#' @param initProb A matrix containing the initial probabilities from the hidden markov model
+#' @param dataV A vector containing the observed sequence of data
+#' @return A vector containing the most probable sequence of hidden states
+#' @export
 viterbi <- function(transProb, emisProb, initProb, dataV) {
     .Call('rspatiotemp_viterbi', PACKAGE = 'rspatiotemp', transProb, emisProb, initProb, dataV)
 }
 
+#' Train Hidden Markov model
+#' @title Train (train)
+#' @param transProb A matrix containing the transition probabilites from the hidden markov model
+#' @param emisProb A matrix containing the emission probabilities from the hidden markov model
+#' @param initProb A matrix containing the initial probabilities from the hidden markov model
+#' @param dataV A vector containing the observed sequence of data
+#' @return A list of new probability matrices
+#' @export
 train <- function(transProb, emisProb, initProb, dataV) {
     .Call('rspatiotemp_train', PACKAGE = 'rspatiotemp', transProb, emisProb, initProb, dataV)
 }
@@ -79,6 +109,7 @@ train <- function(transProb, emisProb, initProb, dataV) {
 #' @param alphabetSize The size of the alphabet for classification of PAAs to SAX Words.
 #' @param iSAX False: returns only the SAX Word. True: returns SAX Word and Cardinality.
 #' @return A Vector that contains the SAX Word and if iSAX = true a Vector that contains its corresponding Cardinality.
+#' @export
 runSAX <- function(orgData, segmentSize, alphabetSize, iSAX = FALSE) {
     .Call('rspatiotemp_runSAX', PACKAGE = 'rspatiotemp', orgData, segmentSize, alphabetSize, iSAX)
 }

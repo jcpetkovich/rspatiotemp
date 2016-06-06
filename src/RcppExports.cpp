@@ -65,15 +65,6 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// tt
-void tt();
-RcppExport SEXP rspatiotemp_tt() {
-BEGIN_RCPP
-    Rcpp::RNGScope __rngScope;
-    tt();
-    return R_NilValue;
-END_RCPP
-}
 // forward
 double forward(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<double> initProb, std::vector<int> dataO, int dataH, int indexH);
 RcppExport SEXP rspatiotemp_forward(SEXP transProbSEXP, SEXP emisProbSEXP, SEXP initProbSEXP, SEXP dataOSEXP, SEXP dataHSEXP, SEXP indexHSEXP) {
