@@ -194,3 +194,4 @@ double F(std::vector<int> v, int hSize, std::vector<double> a, std::vector<doubl
 
   return log(val)*-1;
 }
+
