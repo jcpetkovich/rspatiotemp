@@ -28,7 +28,7 @@ detectOutliersFft <- function(data, stepSize, thresholdFreq = 0.1, frequencyAmp 
     outlierPos = detectOutlierPositionFft(data[lB:uB],thresholdFreq,frequencyAmp)
 
     if(!is.nan(outlierPos)){
-      outlierPos = outlierPos + i - stepSize-1
+      outlierPos = outlierPos + i - stepSize
       outliers = c(outliers,outlierPos)
     }
   }
