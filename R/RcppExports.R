@@ -102,6 +102,62 @@ train <- function(transProb, emisProb, initProb, dataV) {
     .Call('rspatiotemp_train', PACKAGE = 'rspatiotemp', transProb, emisProb, initProb, dataV)
 }
 
+#' Compute the accumulated degradation at each time interval.
+#' Accumulated Degradation (accDegrad)
+#' @param dataH A matrix containing the horizontal vibration data.
+#' @param dataV A matrix containing the vertival vibration data.
+#' @param alpha A choosen constant value used when computing the R value. The R value takes into account the influence of the time.
+#' @param beta A choosen constant value used when computing the F value. The F value takes into account the influence of the acceleration.
+#' @param weight The weight must be less or equal to 1. It is the percent weight of the horizontal data.
+#' @param rType The method used to compute the R value. See details for more details.
+#' @param fType The method used to compute the F value. See details for more details.
+#' @param onlyFinal Default to false. If true returns only the final accumulated degradtion value.
+#' @return A vector containing all the accumulated degradation values at each time interval.
+#' @details rType: \cr
+#' "exp" = Exponential [R = e^(alpha*(t-i))] \cr
+#' "Nexp" = Normalized Exponential [R = t*e^(alpha*(t-i)/[sum k(1:t)]e^(alpha(t-k)))] \cr
+#' "poly1" = Polynomial 1 [R = (i/t)^alpha] \cr
+#' "poly2" = Polynomial 2 [R = (t-i+1)^alpha] \cr
+#' "Npoly1" = Normalized Polynomial 1 [R = t*(i/t)^alpha/[sum k(1:t)](i/t)^alpha] \cr
+#' "Npoly2" = Normalized Polynomial 2 [R = t*(t-i+1)^alpha/[sum k(1:t)](t-i+1)^alpha]\cr \cr
+#' fType: \cr
+#' "poly" = Polynomial [F = V(i,j)^beta]
+#' "Npoly" = Normalized Polynomial [F = ([sum j(1:data length)]V(i,j)^beta/datalength)^(1/beta)]
+#' @export
+accDegrad <- function(dataH, dataV, alpha, beta, lambda, weight, rType, fType, onlyFinal = FALSE) {
+    .Call('rspatiotemp_accDegrad', PACKAGE = 'rspatiotemp', dataH, dataV, alpha, beta, lambda, weight, rType, fType, onlyFinal)
+}
+
+#' Create a Life Table comparing the accumulated Degradation to the time remaining
+#' @title Create Life Table (createLifeTab)
+#' @param accDeg The output of the 'accDegrad' function. A vector containing the Accumulated Degredation values of the time series data.
+#' @param timeInterval The interval of time inbetween each sample of data.
+#' @return A Life Table used for RUL computation
+#' @export
+createLifeTab <- function(accDeg, timeInterval) {
+    .Call('rspatiotemp_createLifeTab', PACKAGE = 'rspatiotemp', accDeg, timeInterval)
+}
+
+#' Updates Life Table produced from 'createLifeTab' function
+#' @title Update Life Table (updateLifeTab)
+#' @param lifeTab The life table created from createLifeTab or updateLifeTab.
+#' @param accDeg The output of the 'accDegrad' function. A vector containing the Accumulated Degredation values of the time series data.
+#' @return A Life Table used for RUL computation.
+#' @export
+updateLifeTab <- function(lifeTab, accDeg) {
+    .Call('rspatiotemp_updateLifeTab', PACKAGE = 'rspatiotemp', lifeTab, accDeg)
+}
+
+#' Determines the Remaining useful life of a system based on its accumulated degradation value
+#' @title Compute Remaining Useful Life (computeRUL)
+#' @param lifeTab The life table created from createLifeTab or updateLifeTab.
+#' @param accDegVal The final accumulated degredation value of your data.
+#' @return The estimated remaining useful life of the system.
+#' @export
+computeRUL <- function(lifeTab, accDegVal) {
+    .Call('rspatiotemp_computeRUL', PACKAGE = 'rspatiotemp', lifeTab, accDegVal)
+}
+
 #' Convert a time series into a SAX Word.
 #' @title Convert to SAX (runSAX)
 #' @param orgData A vector of time series data to be converted to a SAX Word.

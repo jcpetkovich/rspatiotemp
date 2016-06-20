@@ -56,3 +56,31 @@ decomp <- function(data, peakThreshold, gridColNum){
     }
   }
 }
+
+#' @export
+plotFFT <- function(rawData){
+  rawData.df = data.frame(coef = fft(rawData),freqindex = c(1:length(rawData)))
+  ggplot2::qplot(freqindex,Mod(coef), data = rawData.df[1:length(rawData),], geom = "line")
+}
+
+#' @export
+sdAllFiles.vec <- function(data.path,column){
+  all.files = file.path(data.path,list.files(data.path))
+  sd.data = lapply(all.files,function(file){sd(read.table(file)[,column])})
+  sd.data = as.numeric(sd.data)
+  plot.ts(sd.data)
+}
+
+#' @export
+sdAllFiles.mat <- function(data.path, ncols){
+  all.files = file.path(data.path,list.files(data.path))
+  sd.data = lapply(all.files,function(file){sapply(sd(read.table(file)))})
+  sd.data = unlist(sd.data)
+  sd.data = matrix(ncol = ncols, byrow = T)
+  for(i in 1:ncols){
+    filename = paste("sd(V",i,").png")
+    png(file = filename)
+    plot.ts(sd.data[,i])
+    dev.off()
+  }
+}

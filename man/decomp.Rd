@@ -4,7 +4,7 @@
 \alias{decomp}
 \title{Signal Decomposition (decomp)}
 \usage{
-Computes and plots the decompsed subseries of a time series signal
+decomp(data, peakThreshold, gridColNum)
 }
 \arguments{
 \item{data}{The time series signal as a vector}
@@ -12,6 +12,9 @@ Computes and plots the decompsed subseries of a time series signal
 \item{peakThreshold}{The chosen threshold for which to identify peaks in the spectrum}
 
 \item{gridColNum}{The number of columns when the displaying the subseries plots. The number of rows is also calculated from this value.}
+}
+\value{
+None. Computes and plots the decompsed subseries of a time series signal
 }
 \description{
 Decompose a time series signal into several subseries using band-pass filtering based decomposition

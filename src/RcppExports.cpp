@@ -124,6 +124,61 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// accDegrad
+NumericVector accDegrad(NumericMatrix dataH, NumericMatrix dataV, int alpha, int beta, int lambda, double weight, std::string rType, std::string fType, bool onlyFinal);
+RcppExport SEXP rspatiotemp_accDegrad(SEXP dataHSEXP, SEXP dataVSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP lambdaSEXP, SEXP weightSEXP, SEXP rTypeSEXP, SEXP fTypeSEXP, SEXP onlyFinalSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericMatrix >::type dataH(dataHSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type dataV(dataVSEXP);
+    Rcpp::traits::input_parameter< int >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< int >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< int >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< double >::type weight(weightSEXP);
+    Rcpp::traits::input_parameter< std::string >::type rType(rTypeSEXP);
+    Rcpp::traits::input_parameter< std::string >::type fType(fTypeSEXP);
+    Rcpp::traits::input_parameter< bool >::type onlyFinal(onlyFinalSEXP);
+    __result = Rcpp::wrap(accDegrad(dataH, dataV, alpha, beta, lambda, weight, rType, fType, onlyFinal));
+    return __result;
+END_RCPP
+}
+// createLifeTab
+List createLifeTab(std::vector<double> accDeg, double timeInterval);
+RcppExport SEXP rspatiotemp_createLifeTab(SEXP accDegSEXP, SEXP timeIntervalSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<double> >::type accDeg(accDegSEXP);
+    Rcpp::traits::input_parameter< double >::type timeInterval(timeIntervalSEXP);
+    __result = Rcpp::wrap(createLifeTab(accDeg, timeInterval));
+    return __result;
+END_RCPP
+}
+// updateLifeTab
+List updateLifeTab(List lifeTab, NumericVector accDeg);
+RcppExport SEXP rspatiotemp_updateLifeTab(SEXP lifeTabSEXP, SEXP accDegSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< List >::type lifeTab(lifeTabSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type accDeg(accDegSEXP);
+    __result = Rcpp::wrap(updateLifeTab(lifeTab, accDeg));
+    return __result;
+END_RCPP
+}
+// computeRUL
+double computeRUL(List lifeTab, double accDegVal);
+RcppExport SEXP rspatiotemp_computeRUL(SEXP lifeTabSEXP, SEXP accDegValSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< List >::type lifeTab(lifeTabSEXP);
+    Rcpp::traits::input_parameter< double >::type accDegVal(accDegValSEXP);
+    __result = Rcpp::wrap(computeRUL(lifeTab, accDegVal));
+    return __result;
+END_RCPP
+}
 // runSAX
 RObject runSAX(std::vector<float> orgData, int segmentSize, int alphabetSize, bool iSAX);
 RcppExport SEXP rspatiotemp_runSAX(SEXP orgDataSEXP, SEXP segmentSizeSEXP, SEXP alphabetSizeSEXP, SEXP iSAXSEXP) {
