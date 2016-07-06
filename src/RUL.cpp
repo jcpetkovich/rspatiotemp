@@ -44,7 +44,7 @@ double rValue(int alpha, int i, int t, int rType){
   }
   return rResult;
 }
-
+// [[Rcpp::export]]
 double vValue(double vH, double vV, double weight, int lambda){
   return pow((pow(weight*vH,lambda) + pow((1-weight)*vV,lambda)),(1/lambda));
 }
@@ -54,7 +54,7 @@ double fValue(int j, int beta, double weight, int lambda, std::vector<double> *d
   double sum = 0;
   switch(fType){
   //Polynomial
-  case 223:
+  case 233:
     fResult = pow(vValue(dataH -> at(j),dataV -> at(j), weight, lambda),beta);
     break;
     //Normalized polynomial
@@ -72,8 +72,8 @@ double degradation(std::vector<double> dataH, std::vector<double> dataV, int alp
   double degrad = 0;
   for(int j = 1; j < dataH.size(); j++)
     degrad += fValue(j,beta,weight,lambda,&dataH,&dataV,fType);
-  degrad *= R/dataH.size();
-  return R;
+  degrad *= R;///dataH.size();
+  return degrad;
 }
 
 //' Compute the accumulated degradation at each time interval.
@@ -181,8 +181,40 @@ List updateLifeTab(List lifeTab, NumericVector accDeg){
 double computeRUL(List lifeTab, double accDegVal){
   NumericMatrix lifeTabMat = lifeTab[0];
   for(int i = 0; i < lifeTabMat.nrow(); i++){
-    if(lifeTabMat.at(i,0)>accDegVal)
+    if(lifeTabMat.at(i,0)<accDegVal)
       return lifeTabMat.at(i,1);
   }
   return 0;
 }
+
+//' @export
+// [[Rcpp::export]]
+List meanAndStd(List probMatX){
+  std::vector<double> mean;
+  std::vector<double> stdev;
+  arma::mat revEmisProb = as<arma::mat>(probMatX[4]);
+  std::vector<int> revEmisCount = as<std::vector<int>>(probMatX[5]);
+  mean.reserve(revEmisCount.size());
+  mean.resize(revEmisCount.size());
+  stdev.reserve(revEmisCount.size());
+  stdev.resize(revEmisCount.size());
+  for(int i = 0; i < revEmisCount.size();i++)
+    revEmisProb.col(i)*=revEmisCount.at(i);
+  for(int c = 0; c < revEmisCount.size(); c++){
+    double meanTemp = 0;
+    for(int r = 0; r < revEmisProb.n_rows; r++)
+      meanTemp += (r+1)*revEmisProb.at(r,c);
+    mean.at(c) = meanTemp/revEmisCount.at(c);
+  }
+  for(int c = 0; c < revEmisCount.size(); c++){
+    double stdTemp = 0;
+    for(int r = 0; r < revEmisProb.n_rows; r++){
+      if(revEmisProb.at(r,c)!=0)
+        stdTemp += pow(revEmisProb.at(r,c)-mean.at(c),2)*revEmisProb.at(r,c);
+    }
+    stdev.at(c) = sqrt(stdTemp/revEmisCount.at(c));
+  }
+  return List::create(Named("TransProb") = probMatX[0], Named("TransCount") = probMatX[1], Named("EmisProb") = probMatX[2], Named("EmisCount") = probMatX[3], Named("RevEmisProb") = probMatX[4], Named("RevEmisCount") = probMatX[5], Named("Mean") = wrap(mean), Named("StdDev") = wrap(stdev));
+}
+
+

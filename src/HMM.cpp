@@ -10,15 +10,16 @@
 using namespace Rcpp;
 
 //Rcpp::Matrix to a double[]
-double* mtxToDbl(NumericMatrix &mtxData){
-  int row = mtxData.nrow();
-  int col = mtxData.ncol();
+double* mtxToDbl(NumericMatrix *mtxData){
+  int row = mtxData -> nrow();
+  int col = mtxData -> ncol();
   double *dblData = new double[row*col];
-
-#pragma omp parallel for
-  for(int c = 0; c < col; c++){
-    for(int r = 0; r < row; r++)
-      dblData[c*row + r] = mtxData.at(r,c);
+  int counter = 0;
+  for(int r = 0; r < row; r++){
+    for(int c = 0; c < col; c++){
+      dblData[counter] = mtxData -> at(r,c);
+      counter++;
+    }
   }
   return dblData;
 }
@@ -26,13 +27,9 @@ double* mtxToDbl(NumericMatrix &mtxData){
 //std::vector to double[]
 double* vecToDbl(std::vector<double> &vecData){
   double *dblData = new double[vecData.size()];
-  int tile = 4096; //tbd
 
-#pragma omp parallel for
-  for(int ii = 0; ii < vecData.size(); ii+= tile){
-    for(int i = ii; i < ii + tile && i < vecData.size(); i++)
-      dblData[i] = vecData.at(i);
-  }
+  for(int i = 0; i < vecData.size(); i++)
+    dblData[i] = vecData.at(i);
 
   return dblData;
 }
@@ -88,7 +85,7 @@ std::vector<double> matToMtxDbl(cv::Mat &Data){
 #pragma omp parallel for
   for(int col = 0; col < Data.cols; col++)
     for(int row = 0; row < Data.rows; row++)
-      data.at(row*Data.cols + col) = Data.at<double>(row,col);
+      data.at(row + col*Data.rows) = Data.at<double>(row,col);
   return data;
 }
 
@@ -162,18 +159,32 @@ double forward(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<dou
 //' @return A vector containing the probability to get to each index of the hidden state given the observed state
 //' @export
 // [[Rcpp::export]]
-RObject viterbiProbVal(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<double> initProb, std::vector<int> dataO, std::vector<int> dataH){
+RObject viterbiProbVal(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<double> initProb, std::vector<int> dataO, std::vector<int> dataH, bool logLand = false){
   int maxLength = std::min(dataO.size(),dataH.size());
-  NumericVector forwProb(maxLength);
-  //initial
-  forwProb.at(0) = initProb.at(dataH.at(0) * emisProb(dataO.at(0),dataH.at(0)));
-  int tile = 10; //tbd
+  std::vector<double> forwProb;
+  forwProb.reserve(maxLength);
+  forwProb.resize(maxLength);
+  if(logLand){
+    forwProb.at(0) = log(initProb.at(dataH.at(0))) + log(emisProb(dataH.at(0),dataO.at(0)));
+    int tile = 10; //tbd
 #pragma omp parallel for
-  for(int tt = 1; tt < maxLength; tt+= tile){
-    for(int t = tt; t < (tt+tile) && t < maxLength; t++)
-      forwProb.at(t) = emisProb.at(dataO.at(t),dataH.at(t)) * transProb.at(dataH.at(t),dataH.at(t-1)) * forwProb.at(t-1);
+    for(int tt = 1; tt < maxLength; tt+= tile){
+      for(int t = tt; t < (tt+tile) && t < maxLength; t++)
+        forwProb.at(t) = log(emisProb.at(dataH.at(t),dataO.at(t))) + log(transProb.at(dataH.at(t-1),dataH.at(t))) + forwProb.at(t-1);
+    }
+    return wrap(forwProb);
   }
-  return forwProb;
+  else{
+    //initial
+    forwProb.at(0) = initProb.at(dataH.at(0)) * emisProb(dataH.at(0),dataO.at(0));
+    int tile = 10; //tbd
+#pragma omp parallel for
+    for(int tt = 1; tt < maxLength; tt+= tile){
+      for(int t = tt; t < (tt+tile) && t < maxLength; t++)
+        forwProb.at(t) = emisProb.at(dataH.at(t),dataO.at(t)) * transProb.at(dataH.at(t-1),dataH.at(t)) * forwProb.at(t-1);
+    }
+    return wrap(forwProb);
+  }
 }
 
 //' Determine the most probable hidden sequence given an observed sequence
@@ -185,8 +196,8 @@ RObject viterbiProbVal(NumericMatrix transProb, NumericMatrix emisProb, std:: ve
 //' @export
 // [[Rcpp::export]]
 RObject viterbi(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> initProb, std::vector<int> dataV){
-  cv::Mat trans = cv::Mat(transProb.ncol(),transProb.nrow(),CV_64F, mtxToDbl(transProb)).clone();
-  cv::Mat emis = cv::Mat(emisProb.ncol(),emisProb.nrow(),CV_64F, mtxToDbl(emisProb)).clone();
+  cv::Mat trans = cv::Mat(transProb.ncol(),transProb.nrow(),CV_64F, mtxToDbl(&transProb)).clone();
+  cv::Mat emis = cv::Mat(emisProb.ncol(),emisProb.nrow(),CV_64F, mtxToDbl(&emisProb)).clone();
   cv::Mat init = cv::Mat(1,initProb.size(),CV_64F, vecToDbl(initProb)).clone();
   int *data = vecToInt(dataV);
   cv::Mat seq = cv::Mat(1,dataV.size(),CV_32S,data);
@@ -205,17 +216,17 @@ RObject viterbi(NumericMatrix transProb, NumericMatrix emisProb, std::vector<dou
 //' @return A list of new probability matrices
 //' @export
 // [[Rcpp::export]]
-RObject train(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> initProb, std::vector<int> dataV){
-  cv::Mat trans = cv::Mat(transProb.ncol(),transProb.nrow(),CV_64F, mtxToDbl(transProb)).clone();
-  cv::Mat emis = cv::Mat(emisProb.ncol(),emisProb.nrow(),CV_64F, mtxToDbl(emisProb)).clone();
+List train(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> initProb, std::vector<int> dataV){
+  cv::Mat trans = cv::Mat(transProb.nrow(),transProb.ncol(),CV_64F, mtxToDbl(&transProb)).clone();
+  cv::Mat emis = cv::Mat(emisProb.nrow(),emisProb.ncol(),CV_64F, mtxToDbl(&emisProb)).clone();
   cv::Mat init = cv::Mat(1,initProb.size(),CV_64F, vecToDbl(initProb)).clone();
+  CvHMM hmm;
+
   int *data = vecToInt(dataV);
   cv::Mat seq = cv::Mat(1,dataV.size(),CV_32S,data);
 
-  CvHMM hmm;
   int maxIterations = 1000;
   hmm.train(seq,maxIterations,trans,emis,init);
-
   NumericVector mtxTrans = wrap(matToMtxDbl(trans));
   mtxTrans.attr("dim") = Dimension(transProb.nrow(),transProb.ncol());
 

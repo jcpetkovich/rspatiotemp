@@ -75,8 +75,8 @@ forward <- function(transProb, emisProb, initProb, dataO, dataH, indexH) {
 #' @param dataH A vector containing the hidden sequence of data
 #' @return A vector containing the probability to get to each index of the hidden state given the observed state
 #' @export
-viterbiProbVal <- function(transProb, emisProb, initProb, dataO, dataH) {
-    .Call('rspatiotemp_viterbiProbVal', PACKAGE = 'rspatiotemp', transProb, emisProb, initProb, dataO, dataH)
+viterbiProbVal <- function(transProb, emisProb, initProb, dataO, dataH, logLand = FALSE) {
+    .Call('rspatiotemp_viterbiProbVal', PACKAGE = 'rspatiotemp', transProb, emisProb, initProb, dataO, dataH, logLand)
 }
 
 #' Determine the most probable hidden sequence given an observed sequence
@@ -100,6 +100,10 @@ viterbi <- function(transProb, emisProb, initProb, dataV) {
 #' @export
 train <- function(transProb, emisProb, initProb, dataV) {
     .Call('rspatiotemp_train', PACKAGE = 'rspatiotemp', transProb, emisProb, initProb, dataV)
+}
+
+vValue <- function(vH, vV, weight, lambda) {
+    .Call('rspatiotemp_vValue', PACKAGE = 'rspatiotemp', vH, vV, weight, lambda)
 }
 
 #' Compute the accumulated degradation at each time interval.
@@ -156,6 +160,84 @@ updateLifeTab <- function(lifeTab, accDeg) {
 #' @export
 computeRUL <- function(lifeTab, accDegVal) {
     .Call('rspatiotemp_computeRUL', PACKAGE = 'rspatiotemp', lifeTab, accDegVal)
+}
+
+#' @export
+meanAndStd <- function(probMatX) {
+    .Call('rspatiotemp_meanAndStd', PACKAGE = 'rspatiotemp', probMatX)
+}
+
+#' Computes nodal energy of a single column of a WPD. Called by the 'getEnergy' function.
+#' @title Compute single nodal energy (nodeEnergy)
+#' @param node A NumericVector containing a single column of the WPD values.
+#' @param size The length of each column.
+#' @return The nodal energy value of that column of the WPD.
+NULL
+
+#' Compute nodal energy of a WPD.
+#' @title Compute nodal energy (getEnergy)
+#' @param wpdData A NumericMatrix containing the WPD.
+#' @return A vector of the nodal energy valyes of the WPD.
+#' @export
+getEnergy <- function(wpdData) {
+    .Call('rspatiotemp_getEnergy', PACKAGE = 'rspatiotemp', wpdData)
+}
+
+#' Group viterbi sequence values accordingly for mean and stdDev calculation
+#' @title Format Viterbi Sequence (formatRULHMM)
+#' @param seq The viterbi sequence to be formatted
+#' @return A list of the reduced sequence and the repeat sequence. The formatted sequence.
+#' @export
+formatRULHMM <- function(seq) {
+    .Call('rspatiotemp_formatRULHMM', PACKAGE = 'rspatiotemp', seq)
+}
+
+#' Compute the mean and standard deviation of the formatted viterbi sequence.
+#' @title Mean and StdDev of viterbi (meanStdDev)
+#' @param redSeq The reduced viterbi sequence from the 'formatRULHMM' function.
+#' @param repSeq The repeat viterbi sequence from the 'formatRULHMM' function.
+#' @param hidAlphabetSize The alphabet size of the hidden sequence.
+#' @param tab Whether or not you are using *.tab functions.
+#' @return The mean and standard deviation vectors for each state.
+#' @export
+meanStdDev <- function(redSeq, repSeq, hidAlphabetSize, tab = FALSE) {
+    .Call('rspatiotemp_meanStdDev', PACKAGE = 'rspatiotemp', redSeq, repSeq, hidAlphabetSize, tab)
+}
+
+#' Finding the critical path from a start state to an end state given the transition probabilities.
+#' @title Find Critical Path (criticalPath)
+#' @param transProb A NumericMatrix of the transition probabilities.
+#' @param startState The beginning state in the path.
+#' @param endState The ending state in the path.
+#' @param possibleStates A vector containing the possible states in the path.
+#' @return A vector containing the critical path. The most probably path from the start state to the end state where each state is visited at most once.
+#' @export
+criticalPath <- function(transProb, startState, endState, possibleStates) {
+    .Call('rspatiotemp_criticalPath', PACKAGE = 'rspatiotemp', transProb, startState, endState, possibleStates)
+}
+
+#' Compute the RUL and it's upper and lower bounds.
+#' @title Compute RUL and bounds (computeRULBounds)
+#' @param criticalSeq The critical path from the 'criticalPath' function.
+#' @param meanVec The mean vector from the 'meanStdDev' function.
+#' @param stdDev The standard deviation vector from the 'meanStdDev' function.
+#' @param confCoef A confidence constant used for the computation of the upper and lower bounds.
+#' @return The estimated RUL and its lower and upper bounds.
+#' @export
+computeRULBounds <- function(criticalSeq, meanVec, stdDev, confCoef) {
+    .Call('rspatiotemp_computeRULBounds', PACKAGE = 'rspatiotemp', criticalSeq, meanVec, stdDev, confCoef)
+}
+
+#' Compute the probability of that the given continuous observed and discrete hidden sequences occuring in a trained system.
+#' @title Viterbi Probability Value (viterbiProbVal)
+#' @param transProb A matrix containing the transition probabilites from the hidden markov model.
+#' @param emisProb A matrix containing the emission probabilities from the hidden markov model.
+#' @param obsSeq A vector containing the observed sequence of data.
+#' @param hidSeq A vector containing the hidden sequence of data.
+#' @return The probability of the given continous observed and discrete hidden sequences occuring in a trained system.
+#' @export
+viterbiProbDepmix <- function(transProb, emisProb, obsSeq, hidSeq) {
+    .Call('rspatiotemp_viterbiProbDepmix', PACKAGE = 'rspatiotemp', transProb, emisProb, obsSeq, hidSeq)
 }
 
 #' Convert a time series into a SAX Word.

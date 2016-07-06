@@ -4,7 +4,7 @@
 \alias{viterbiProbVal}
 \title{Viterbi Probability Value (viterbiProbVal)}
 \usage{
-viterbiProbVal(transProb, emisProb, initProb, dataO, dataH)
+viterbiProbVal(transProb, emisProb, initProb, dataO, dataH, logLand = FALSE)
 }
 \arguments{
 \item{transProb}{A matrix containing the transition probabilites from the hidden markov model}

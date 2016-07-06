@@ -82,8 +82,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // viterbiProbVal
-RObject viterbiProbVal(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<double> initProb, std::vector<int> dataO, std::vector<int> dataH);
-RcppExport SEXP rspatiotemp_viterbiProbVal(SEXP transProbSEXP, SEXP emisProbSEXP, SEXP initProbSEXP, SEXP dataOSEXP, SEXP dataHSEXP) {
+RObject viterbiProbVal(NumericMatrix transProb, NumericMatrix emisProb, std:: vector<double> initProb, std::vector<int> dataO, std::vector<int> dataH, bool logLand);
+RcppExport SEXP rspatiotemp_viterbiProbVal(SEXP transProbSEXP, SEXP emisProbSEXP, SEXP initProbSEXP, SEXP dataOSEXP, SEXP dataHSEXP, SEXP logLandSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -92,7 +92,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std:: vector<double> >::type initProb(initProbSEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type dataO(dataOSEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type dataH(dataHSEXP);
-    __result = Rcpp::wrap(viterbiProbVal(transProb, emisProb, initProb, dataO, dataH));
+    Rcpp::traits::input_parameter< bool >::type logLand(logLandSEXP);
+    __result = Rcpp::wrap(viterbiProbVal(transProb, emisProb, initProb, dataO, dataH, logLand));
     return __result;
 END_RCPP
 }
@@ -111,7 +112,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // train
-RObject train(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> initProb, std::vector<int> dataV);
+List train(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> initProb, std::vector<int> dataV);
 RcppExport SEXP rspatiotemp_train(SEXP transProbSEXP, SEXP emisProbSEXP, SEXP initProbSEXP, SEXP dataVSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
@@ -121,6 +122,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::vector<double> >::type initProb(initProbSEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type dataV(dataVSEXP);
     __result = Rcpp::wrap(train(transProb, emisProb, initProb, dataV));
+    return __result;
+END_RCPP
+}
+// vValue
+double vValue(double vH, double vV, double weight, int lambda);
+RcppExport SEXP rspatiotemp_vValue(SEXP vHSEXP, SEXP vVSEXP, SEXP weightSEXP, SEXP lambdaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< double >::type vH(vHSEXP);
+    Rcpp::traits::input_parameter< double >::type vV(vVSEXP);
+    Rcpp::traits::input_parameter< double >::type weight(weightSEXP);
+    Rcpp::traits::input_parameter< int >::type lambda(lambdaSEXP);
+    __result = Rcpp::wrap(vValue(vH, vV, weight, lambda));
     return __result;
 END_RCPP
 }
@@ -176,6 +191,95 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type lifeTab(lifeTabSEXP);
     Rcpp::traits::input_parameter< double >::type accDegVal(accDegValSEXP);
     __result = Rcpp::wrap(computeRUL(lifeTab, accDegVal));
+    return __result;
+END_RCPP
+}
+// meanAndStd
+List meanAndStd(List probMatX);
+RcppExport SEXP rspatiotemp_meanAndStd(SEXP probMatXSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< List >::type probMatX(probMatXSEXP);
+    __result = Rcpp::wrap(meanAndStd(probMatX));
+    return __result;
+END_RCPP
+}
+// getEnergy
+NumericVector getEnergy(NumericMatrix wpdData);
+RcppExport SEXP rspatiotemp_getEnergy(SEXP wpdDataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericMatrix >::type wpdData(wpdDataSEXP);
+    __result = Rcpp::wrap(getEnergy(wpdData));
+    return __result;
+END_RCPP
+}
+// formatRULHMM
+List formatRULHMM(std::vector<int> seq);
+RcppExport SEXP rspatiotemp_formatRULHMM(SEXP seqSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<int> >::type seq(seqSEXP);
+    __result = Rcpp::wrap(formatRULHMM(seq));
+    return __result;
+END_RCPP
+}
+// meanStdDev
+List meanStdDev(std::vector<int> redSeq, std::vector<int> repSeq, int hidAlphabetSize, bool tab);
+RcppExport SEXP rspatiotemp_meanStdDev(SEXP redSeqSEXP, SEXP repSeqSEXP, SEXP hidAlphabetSizeSEXP, SEXP tabSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<int> >::type redSeq(redSeqSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type repSeq(repSeqSEXP);
+    Rcpp::traits::input_parameter< int >::type hidAlphabetSize(hidAlphabetSizeSEXP);
+    Rcpp::traits::input_parameter< bool >::type tab(tabSEXP);
+    __result = Rcpp::wrap(meanStdDev(redSeq, repSeq, hidAlphabetSize, tab));
+    return __result;
+END_RCPP
+}
+// criticalPath
+NumericVector criticalPath(NumericMatrix transProb, int startState, int endState, std::vector<int> possibleStates);
+RcppExport SEXP rspatiotemp_criticalPath(SEXP transProbSEXP, SEXP startStateSEXP, SEXP endStateSEXP, SEXP possibleStatesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericMatrix >::type transProb(transProbSEXP);
+    Rcpp::traits::input_parameter< int >::type startState(startStateSEXP);
+    Rcpp::traits::input_parameter< int >::type endState(endStateSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type possibleStates(possibleStatesSEXP);
+    __result = Rcpp::wrap(criticalPath(transProb, startState, endState, possibleStates));
+    return __result;
+END_RCPP
+}
+// computeRULBounds
+List computeRULBounds(std::vector<int> criticalSeq, std::vector<double> meanVec, std::vector<double> stdDev, double confCoef);
+RcppExport SEXP rspatiotemp_computeRULBounds(SEXP criticalSeqSEXP, SEXP meanVecSEXP, SEXP stdDevSEXP, SEXP confCoefSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<int> >::type criticalSeq(criticalSeqSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type meanVec(meanVecSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type stdDev(stdDevSEXP);
+    Rcpp::traits::input_parameter< double >::type confCoef(confCoefSEXP);
+    __result = Rcpp::wrap(computeRULBounds(criticalSeq, meanVec, stdDev, confCoef));
+    return __result;
+END_RCPP
+}
+// viterbiProbDepmix
+NumericVector viterbiProbDepmix(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> obsSeq, std::vector<int> hidSeq);
+RcppExport SEXP rspatiotemp_viterbiProbDepmix(SEXP transProbSEXP, SEXP emisProbSEXP, SEXP obsSeqSEXP, SEXP hidSeqSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericMatrix >::type transProb(transProbSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type emisProb(emisProbSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type obsSeq(obsSeqSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type hidSeq(hidSeqSEXP);
+    __result = Rcpp::wrap(viterbiProbDepmix(transProb, emisProb, obsSeq, hidSeq));
     return __result;
 END_RCPP
 }
