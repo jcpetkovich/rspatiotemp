@@ -224,8 +224,11 @@ createModel.path.dm.tab <- function(data.path, exp2, hidAlphabetSize){
 }
 
 createPartModel.path.dm.tab <- function(data.path, exp2, hidAlphabetSize,maxSize){
-  timeSeries = rspatiotemp::readToVecPart(data.path,maxSize)
-  return(createModel.dm.tab(timeSeries,exp2,hidAlphabetSize))
+  #timeSeries = rspatiotemp::readToVecPart(data.path,maxSize)
+  load(data.path)
+  data = unlist(data)
+  data = as.numeric(data)
+  return(createModel.dm.tab(data[1:maxSize],exp2,hidAlphabetSize))
 }
 
 #' Create a several hidden markov model for the sets of data located in the given file path using the depmixS4 package with a tab of all states.
