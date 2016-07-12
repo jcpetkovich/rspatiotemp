@@ -78,7 +78,7 @@ void normData(std::vector<float> *data, std::vector<float> *norm){
 #pragma omp parallel for default(shared) reduction(+ : sumx,                   \
   sumx2) schedule(guided)
     for (decltype(data->size()) i = 0; i < data->size(); i++) {
-      if(!isfinite(data->at(i)))
+      if(!std::isfinite(data->at(i)))
         Rf_error("Your data contains NaN, Inf or -Inf. Remove them and try again");
       sumx += data->at(i);
       sumx2 += data->at(i) * data->at(i);
