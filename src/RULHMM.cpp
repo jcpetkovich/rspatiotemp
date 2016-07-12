@@ -232,3 +232,44 @@ NumericVector viterbiProbDepmix(NumericMatrix transProb, NumericMatrix emisProb,
   }
   return wrap(forwProb.at(forwProb.size()-1));
 }
+
+struct nodeVit{
+  nodeVit* prev;
+  int state = 0;
+  double logProb;
+};
+/*
+//' @export
+// [[Rcpp::export]]
+NumericVector viterbiCont(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> obsSeq){
+  nodeVit** prevNodes = new nodeVit*[transProb.nrow()];
+  nodeVit** tailNodes1 = new nodeVit*[transProb.nrow()];
+  for(int i = 0; i < transProb.nrow(); i++){
+    nodeVit *tempNode = new nodeVit;
+    tempNode -> prev = NULL;
+    tempNode -> state = i;
+    double obsVal = fabs(emisProb.at(0,i)-obsSeq.at(0)) + emisProb.at(0,i);
+    tempNode -> logProb = log(R::pnorm5(obsSeq.at(0),emisProb.at(0,i),emisProb.at(1,i),1,0));
+    tailNodes1[i] = tempNode;
+  }
+  prevNodes = tailNodes1;
+  for(int ob = 1; ob < obsSeq.size(); ob++){
+    for(int row = 0; row < transProb.nrow(); row++){
+      nodeVit** tailNodes = new nodeVit*[transProb.nrow()];
+      double maxLogProb = (prevNodes[0] -> logProb) + log(transProb.at(0,row));
+      int prevState = 0;
+      for(int prevRow = 1; prevRow < transProb.nrow(); prevRow++){
+        if(((prevNodes[prevRow] -> logProb) + log(transProb.at(prevRow,row))) > maxLogProb){
+          maxLogProb = (prevNodes[prevRow] -> logProb) + log(transProb.at(prevRow,row));
+          prevState = prevRow;
+        }
+      }
+      nodeVit *tempNode = new nodeVit;
+      tempNode -> prev = prevNodes[prevState];
+      tempNode -> state = row;
+      double obsVal = fabs(emisProb.at(0,row)-obsSeq.at(ob)) + emisProb.at(0,row);
+      tempNode -> logProb = maxLogProb + log(R::pnorm5(obsSeq.at(ob),emisProb.at(0,row),emisProb.at(1,row),1,0));
+    }
+  }
+
+}*/

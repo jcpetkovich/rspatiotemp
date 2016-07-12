@@ -97,6 +97,30 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// maxVec
+double maxVec(std::vector<double> data);
+RcppExport SEXP rspatiotemp_maxVec(SEXP dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<double> >::type data(dataSEXP);
+    __result = Rcpp::wrap(maxVec(data));
+    return __result;
+END_RCPP
+}
+// probObsLog
+double probObsLog(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> dataO);
+RcppExport SEXP rspatiotemp_probObsLog(SEXP transProbSEXP, SEXP emisProbSEXP, SEXP dataOSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericMatrix >::type transProb(transProbSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type emisProb(emisProbSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type dataO(dataOSEXP);
+    __result = Rcpp::wrap(probObsLog(transProb, emisProb, dataO));
+    return __result;
+END_RCPP
+}
 // viterbi
 RObject viterbi(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> initProb, std::vector<int> dataV);
 RcppExport SEXP rspatiotemp_viterbi(SEXP transProbSEXP, SEXP emisProbSEXP, SEXP initProbSEXP, SEXP dataVSEXP) {

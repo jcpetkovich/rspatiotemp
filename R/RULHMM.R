@@ -22,6 +22,11 @@ toWPDSAX <- function(timeSeries, SAXalphabetSize, SAXgroupSize, exp2){
   return(wpSAX)
 }
 
+toWPDSAX.path <- function(data.path, SAXalphabetSize, SAXgroupSize, exp2){
+  timeSeries = rspatiotemp::readToVec(data.path)
+  return(toWPDSAX(timeSeries,SAXalphabetSize,SAXgroupSize,exp2))
+}
+
 #' Compute nodal energies of the wavelet packet decomposition.
 #' @title Nodal Energy of WPD (wpdEnergy)
 #' @param timeSeries The time series data fed into the WPD.
@@ -107,11 +112,13 @@ meanStdDevR <- function(hidSeq, hidAlphabetSize,tabB = FALSE){
 #' @param hidAlphabetSize The alphabet size of the hidden sequence.
 #' @return A HMM generated from the time series.
 #' @export
-createModel <- function(timeSeries, SAXalphabetSize, SAXgroupSize, exp2, hidAlphabetSize){
+createModel <- function(timeSeries, SAXalphabetSize, SAXgroupSize, exp2, hidAlphabetSize, tab){
   obsSAX = toWPDSAX(timeSeries,SAXalphabetSize, SAXgroupSize,exp2)
   probMat = trainHMM(obsSAX, SAXalphabetSize,hidAlphabetSize)
   vitSeq = viterbiR(obsSAX,probMat)
-  MaSD = meanStdDevR(vitSeq,hidAlphabetSize,F)
+  MaSD = meanStdDevR(vitSeq,hidAlphabetSize,tab)
+  if(tab)
+    return(list(Transition = probMat$Transition, Emission = probMat$Emission, Initial = probMat$Initial, Mean  = MaSD$mean, StdDev = MaSD$stdDev,Tab = MaSD$tab, Final = vitSeq[length(vitSeq)]))
   return(list(Transition = probMat$Transition, Emission = probMat$Emission, Initial = probMat$Initial, Mean  = MaSD$mean, StdDev = MaSD$stdDev, Final = vitSeq[length(vitSeq)]))
 }
 
@@ -124,9 +131,9 @@ createModel <- function(timeSeries, SAXalphabetSize, SAXgroupSize, exp2, hidAlph
 #' @param hidAlphabetSize The alphabet size of the hidden sequence.
 #' @return A HMM generated from the time series.
 #' @export
-createModel.path <- function(data.path,SAXalphabetSize,SAXgroupSize,exp2,hidAlphabetSize){
+createModel.path <- function(data.path,SAXalphabetSize,SAXgroupSize,exp2,hidAlphabetSize, tab){
   timeSeries = rspatiotemp::readToVec(data.path)
-  return(createModel(timeSeries,SAXalphabetSize,SAXgroupSize,exp2,hidAlphabetSize))
+  return(createModel(timeSeries,SAXalphabetSize,SAXgroupSize,exp2,hidAlphabetSize,tab))
 }
 
 #' Create a several hidden markov model for the sets of data located in the given file path.
@@ -138,9 +145,9 @@ createModel.path <- function(data.path,SAXalphabetSize,SAXgroupSize,exp2,hidAlph
 #' @param hidAlphabetSize The alphabet size of the hidden sequence.
 #' @return A list of HMM generated from the time series.
 #' @export
-createModels.path <- function(data.path,SAXalphabetSize,SAXgroupSize,exp2,hidAlphabetSize){
+createModels.path <- function(data.path,SAXalphabetSize,SAXgroupSize,exp2,hidAlphabetSize, tab){
   all.files = file.path(data.path,list.files(data.path))
-  models = lapply(all.files, function(file){createModel.path(file,SAXalphabetSize,SAXgroupSize,exp2,hidAlphabetSize)})
+  models = lapply(all.files, function(file){createModel.path(file,SAXalphabetSize,SAXgroupSize,exp2,hidAlphabetSize,tab)})
   return(models);
 }
 
@@ -207,7 +214,15 @@ createModel.dm.tab <- function(timeSeries, exp2, hidAlphabetSize){
 #' @return A HMM generated from the time series.
 #' @export
 createModel.path.dm.tab <- function(data.path, exp2, hidAlphabetSize){
-  timeSeries = rspatiotemp::readToVec(data.path)
+  #timeSeries = rspatiotemp::readToVec(data.path)
+  load(data.path)
+  data = unlist(data)
+  data = as.numeric(data)
+  return(createModel.dm.tab(data,exp2,hidAlphabetSize))
+}
+
+createPartModel.path.dm.tab <- function(data.path, exp2, hidAlphabetSize,maxSize){
+  timeSeries = rspatiotemp::readToVecPart(data.path,maxSize)
   return(createModel.dm.tab(timeSeries,exp2,hidAlphabetSize))
 }
 
@@ -224,6 +239,11 @@ createModels.path.dm.tab <- function(data.path, exp2, hidAlphabetSize){
   return(models)
 }
 
+createPartModels.path.dm.tab <- function(data.path, exp2, hidAlphabetSize,maxSize){
+  all.files = file.path(data.path,list.files(data.path))
+  models = lapply(all.files, function(file){createModel.path.dm.tab(file,exp2,hidAlphabetSize)})
+  return(models)
+}
 #' Compute pessimistic remaining useful life using HMMs
 #' @title Remaining useful life using HMM (RUL.HMM)
 #' @param timeSeries The time series to be converted.
@@ -235,18 +255,26 @@ createModels.path.dm.tab <- function(data.path, exp2, hidAlphabetSize){
 #' @param confidenceCoef A constant used when computing the lower and upper bounds of the RUL.
 #' @return The estimated pessimistic remaining useful life with an upper and lower bound.
 #' @export
-RUL.HMM <- function(timeSeries, models, SAXalphabetSize, SAXgroupSize, exp2, lastStateScanNum, confidenceCoef){
+RUL.HMM <- function(timeSeries, models, SAXalphabetSize, SAXgroupSize, exp2, lastStateScanNum, confidenceCoef, tab){
   #Most probable model
   testSAX = toWPDSAX(timeSeries,SAXalphabetSize,SAXgroupSize,exp2)
   modLen = length(models)
   probScore = numeric()
   for(i in 1:modLen){
-    score = rspatiotemp::viterbiProbVal(models[[i]]$Transition, models[[i]]$Emission,models[[i]]$Initial, testSAX, viterbiR(testSAX,models[[i]]),T)
-    probScore = c(probScore,score[length(score)])
+    score = rspatiotemp::probObsLog(models[[i]]$Transition,models[[i]]$Emission,testSAX)
+    probScore = c(probScore,score)
   }
   chosenModelIndex = which.max(probScore)
   #last state
   vitSeq = viterbiR(testSAX,models[[chosenModelIndex]])
+  if(tab){
+    testModel = createModel(timeSeries,SAXalphabetSize,SAXgroupSize,exp2,nrow(models[[1]]$Transition),T)
+    tab = models[[chosenModelIndex]]$Tab - testModel$Tab
+    tab[tab < 0] = 0
+    mid = sum(tab*models[[chosenModelIndex]]$Mean)
+    error = sum(tab*confidenceCoef*models[[chosenModelIndex]]$StdDev)
+    return(list(Lower = mid-error, Middle = mid, Upper = mid+error))
+  }
   lowerBound = length(vitSeq)-lastStateScanNum
   upperBound = length(vitSeq)
   lastState = mode(vitSeq[lowerBound:upperBound])
@@ -273,8 +301,7 @@ RUL.HMM.dm <- function(timeSeries, models, exp2, lastStateScanNum, confidenceCoe
   len = length(models)
   probScore = numeric()
   for(i in 1:len){
-    print(i)
-    probScore = c(probScore,viterbiProbDepmix(models[[i]]$Transition,models[[i]]$Emission,wpdNum, hmm$vitSeq))
+    probScore = c(probScore,probObsLog(models[[i]]$Transition,models[[i]]$Emission,wpdNum))
   }
   chosenModelIndex = which.max(probScore)
   len = length(hmm$vitSeq)
@@ -302,17 +329,51 @@ RUL.dm.tab <- function(timeSeries, models, exp2, confidenceCoef){
   len = length(models)
   probScore = numeric()
   for(i in 1:len){
-    probScore = c(probScore,viterbiProbDepmix(models[[i]]$Transition,models[[i]]$Emission,wpdNum, hmm$vitSeq))
+    probScore = c(probScore,probObsLog(models[[i]]$Transition,models[[i]]$Emission,wpdNum))
   }
   chosenModelIndex = which.max(probScore)
   tab = models[[chosenModelIndex]]$Tab - MaSD$tab
   tab[tab < 0] = 0
   mid = sum(tab*models[[chosenModelIndex]]$Mean)
   error = sum(tab*confidenceCoef*models[[chosenModelIndex]]$StdDev)
-  return(list(Lower = mid-error, Middle = mid, Upper = mid+error))
+  return(list(Model = chosenModelIndex, Lower = mid-error, Middle = mid, Upper = mid+error))
 }
 
-mode <- function(v) {
+#' @export
+RULpartial.dm.tab <- function(timeSeries, trainData.path, models, exp2, confidenceCoef){
+  hidAlphabetSize = nrow(models[[1]]$Transition)
+  wpdNum = wpdEnergy(timeSeries,exp2)
+  wpd = data.frame(energy = wpdNum)
+  hmm = trainHMM.dm(wpd,hidAlphabetSize)
+  MaSD = meanStdDevR(hmm$vitSeq,hidAlphabetSize,T)
+  partialModels = createPartModels.path.dm.tab(trainData.path,exp2,hidAlphabetSize,length(timeSeries))
+  chosenModelIndex = pickPartModel.dm.tab(timeSeries, partialModels, exp2, hidAlphabetSize,wpdNum)
+  tab = models[[chosenModelIndex]]$Tab - MaSD$tab
+  tab[tab < 0] = 0
+  mid = sum(tab*models[[chosenModelIndex]]$Mean)
+  error = sum(tab*confidenceCoef*models[[chosenModelIndex]]$StdDev)
+  return(list(Model = chosenModelIndex, Lower = mid-error, Middle = mid, Upper = mid+error))
+}
+
+pickPartModel.dm.tab <- function(timeSeries, partialModels, exp2, hidAlphabetSize,wpdNum){
+  len = length(partialModels)
+  probScore = numeric()
+  for(i in 1:len){
+    probScore = c(probScore,probObsLog(partialModels[[i]]$Transition,partialModels[[i]]$Emission,wpdNum))
+  }
+  chosenModelIndex = which.max(probScore)
+  return(chosenModelIndex)
+}
+mode <- function(v){
   uniqv = unique(v)
   return(uniqv[which.max(tabulate(match(v, uniqv)))])
 }
+
+#data.path = "~/Documents/untitled folder 2/RULHMMmodels/"
+#all.files = file.path(data.path,list.files(data.path))
+#len = length(all.files)
+#for(i in 1:len){
+#  data = readToVecPart(all.files[i],20480)
+#  result = RULpartial.dm.tab(data, data.path, models, 12, 0.25)
+#  save(result, file = paste("resultPartDMTab",substr(all.files[i],52,55),".Rd",sep = ""))
+#}

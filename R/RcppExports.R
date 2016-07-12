@@ -79,6 +79,15 @@ viterbiProbVal <- function(transProb, emisProb, initProb, dataO, dataH, logLand 
     .Call('rspatiotemp_viterbiProbVal', PACKAGE = 'rspatiotemp', transProb, emisProb, initProb, dataO, dataH, logLand)
 }
 
+maxVec <- function(data) {
+    .Call('rspatiotemp_maxVec', PACKAGE = 'rspatiotemp', data)
+}
+
+#' @export
+probObsLog <- function(transProb, emisProb, dataO) {
+    .Call('rspatiotemp_probObsLog', PACKAGE = 'rspatiotemp', transProb, emisProb, dataO)
+}
+
 #' Determine the most probable hidden sequence given an observed sequence
 #' @param transProb A matrix containing the transition probabilites from the hidden markov model
 #' @param emisProb A matrix containing the emission probabilities from the hidden markov model

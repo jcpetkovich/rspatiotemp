@@ -186,6 +186,61 @@ RObject viterbiProbVal(NumericMatrix transProb, NumericMatrix emisProb, std:: ve
     return wrap(forwProb);
   }
 }
+// [[Rcpp::export]]
+double maxVec(std::vector<double> data){
+  double max = data.at(0);
+  for(int i = 1; i < data.size(); i++){
+    if(data.at(i) > max)
+      max = data.at(i);
+  }
+  return max;
+}
+
+//' @export
+// [[Rcpp::export]]
+double probObsLog(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> dataO){
+  int m = transProb.ncol();
+
+  NumericMatrix probForw(dataO.size(),m);
+  int tile = 10; //tbd
+  //initialize alpha Z0
+#pragma omp parallel for
+  for(int zz = 0; zz < m; zz+=tile){
+    for(int z = zz; z < (zz+tile) && z < m; z++){
+      double obsVal = fabs(emisProb.at(0,z)-dataO.at(0)) + emisProb.at(0,z);
+      probForw.at(0,z) = log(R::pnorm5(obsVal,emisProb.at(0,z),emisProb.at(1,z),1,0));
+    }
+  }
+  //recursion alpha Z_k-1
+  //a_t
+  for(int k = 1; k < dataO.size(); k++){
+    //z_t
+#pragma omp parallel for
+    for(int zz = 0; zz < m; zz+=tile){
+      for(int z = zz; z < (zz+tile) && z < m; z++){
+        std::vector<double> sum;
+        //z_(t-1)
+        for(int i = 0; i < m; i++){
+          double obsVal = fabs(emisProb.at(0,z)-dataO.at(i)) + emisProb.at(0,z);
+          sum.push_back(log(transProb(z,i)) + probForw.at(k-1,i) + log(R::pnorm5(obsVal,emisProb.at(0,i),emisProb.at(1,i),1,0)));
+        }
+        double max = maxVec(sum);
+        double logProb = 0;
+        for(int i = 0; i < m; i++)
+          logProb += exp(sum.at(i)-max);
+        logProb = log(logProb);
+        probForw.at(k,z) = max + logProb;
+      }
+    }
+  }
+
+  double result = 0;
+  for(int i = 0; i < m; i++)
+    result += probForw(dataO.size()-1,i);
+  if(result == 0)
+    Rf_warning("The calculated probability is too small for the double variable type to hold and your result has been rounded to zero");
+  return result;
+}
 
 //' Determine the most probable hidden sequence given an observed sequence
 //' @param transProb A matrix containing the transition probabilites from the hidden markov model
