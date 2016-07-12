@@ -249,6 +249,11 @@ viterbiProbDepmix <- function(transProb, emisProb, obsSeq, hidSeq) {
     .Call('rspatiotemp_viterbiProbDepmix', PACKAGE = 'rspatiotemp', transProb, emisProb, obsSeq, hidSeq)
 }
 
+#' @export
+viterbiCont <- function(transProb, emisProb, obsSeq) {
+    .Call('rspatiotemp_viterbiCont', PACKAGE = 'rspatiotemp', transProb, emisProb, obsSeq)
+}
+
 #' Convert a time series into a SAX Word.
 #' @title Convert to SAX (runSAX)
 #' @param orgData A vector of time series data to be converted to a SAX Word.

@@ -238,7 +238,7 @@ struct nodeVit{
   int state = 0;
   double logProb;
 };
-/*
+
 //' @export
 // [[Rcpp::export]]
 NumericVector viterbiCont(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> obsSeq){
@@ -248,14 +248,14 @@ NumericVector viterbiCont(NumericMatrix transProb, NumericMatrix emisProb, std::
     nodeVit *tempNode = new nodeVit;
     tempNode -> prev = NULL;
     tempNode -> state = i;
-    double obsVal = fabs(emisProb.at(0,i)-obsSeq.at(0)) + emisProb.at(0,i);
-    tempNode -> logProb = log(R::pnorm5(obsSeq.at(0),emisProb.at(0,i),emisProb.at(1,i),1,0));
+    double obsVal = 1 - fabs(emisProb.at(0,i)-obsSeq.at(0)) + emisProb.at(0,i);
+    tempNode -> logProb = log(R::pnorm5(obsVal,emisProb.at(0,i),emisProb.at(1,i),1,0));
     tailNodes1[i] = tempNode;
   }
   prevNodes = tailNodes1;
   for(int ob = 1; ob < obsSeq.size(); ob++){
+    nodeVit** tailNodes = new nodeVit*[transProb.nrow()];
     for(int row = 0; row < transProb.nrow(); row++){
-      nodeVit** tailNodes = new nodeVit*[transProb.nrow()];
       double maxLogProb = (prevNodes[0] -> logProb) + log(transProb.at(0,row));
       int prevState = 0;
       for(int prevRow = 1; prevRow < transProb.nrow(); prevRow++){
@@ -267,9 +267,29 @@ NumericVector viterbiCont(NumericMatrix transProb, NumericMatrix emisProb, std::
       nodeVit *tempNode = new nodeVit;
       tempNode -> prev = prevNodes[prevState];
       tempNode -> state = row;
-      double obsVal = fabs(emisProb.at(0,row)-obsSeq.at(ob)) + emisProb.at(0,row);
-      tempNode -> logProb = maxLogProb + log(R::pnorm5(obsSeq.at(ob),emisProb.at(0,row),emisProb.at(1,row),1,0));
+      double obsVal = 1 - fabs(emisProb.at(0,row)-obsSeq.at(ob)) + emisProb.at(0,row);
+      tempNode -> logProb = maxLogProb + log(R::pnorm5(obsVal,emisProb.at(0,row),emisProb.at(1,row),1,0));
+      tailNodes[row] = tempNode;
+    }
+    prevNodes = tailNodes;
+  }
+  double maxProbVal = prevNodes[0] -> logProb;
+  int finalState = 0;
+  for(int i = 1; i < transProb.nrow(); i++){
+    if((prevNodes[i] -> logProb) > maxProbVal){
+      maxProbVal = prevNodes[i] -> logProb;
+      finalState = i;
     }
   }
-
-}*/
+  std::vector<int> vitSeq;
+  nodeVit *tailNode = prevNodes[finalState];
+  vitSeq.push_back(tailNode -> state);
+  while(true){
+    if(tailNode -> prev == NULL)
+      break;
+    tailNode = tailNode -> prev;
+    vitSeq.push_back(tailNode -> state);
+  }
+  std::reverse(vitSeq.begin(),vitSeq.end());
+  return(wrap(vitSeq));
+}

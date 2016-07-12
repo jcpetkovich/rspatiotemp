@@ -207,7 +207,7 @@ double probObsLog(NumericMatrix transProb, NumericMatrix emisProb, std::vector<d
 #pragma omp parallel for
   for(int zz = 0; zz < m; zz+=tile){
     for(int z = zz; z < (zz+tile) && z < m; z++){
-      double obsVal = fabs(emisProb.at(0,z)-dataO.at(0)) + emisProb.at(0,z);
+      double obsVal = 1 - fabs(emisProb.at(0,z)-dataO.at(0)) + emisProb.at(0,z);
       probForw.at(0,z) = log(R::pnorm5(obsVal,emisProb.at(0,z),emisProb.at(1,z),1,0));
     }
   }
@@ -221,7 +221,7 @@ double probObsLog(NumericMatrix transProb, NumericMatrix emisProb, std::vector<d
         std::vector<double> sum;
         //z_(t-1)
         for(int i = 0; i < m; i++){
-          double obsVal = fabs(emisProb.at(0,z)-dataO.at(i)) + emisProb.at(0,z);
+          double obsVal = 1 - fabs(emisProb.at(0,z)-dataO.at(i)) + emisProb.at(0,z);
           sum.push_back(log(transProb(z,i)) + probForw.at(k-1,i) + log(R::pnorm5(obsVal,emisProb.at(0,i),emisProb.at(1,i),1,0)));
         }
         double max = maxVec(sum);

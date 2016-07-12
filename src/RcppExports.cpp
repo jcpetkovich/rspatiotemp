@@ -307,6 +307,19 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// viterbiCont
+NumericVector viterbiCont(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> obsSeq);
+RcppExport SEXP rspatiotemp_viterbiCont(SEXP transProbSEXP, SEXP emisProbSEXP, SEXP obsSeqSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< NumericMatrix >::type transProb(transProbSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type emisProb(emisProbSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type obsSeq(obsSeqSEXP);
+    __result = Rcpp::wrap(viterbiCont(transProb, emisProb, obsSeq));
+    return __result;
+END_RCPP
+}
 // runSAX
 RObject runSAX(std::vector<float> orgData, int segmentSize, int alphabetSize, bool iSAX);
 RcppExport SEXP rspatiotemp_runSAX(SEXP orgDataSEXP, SEXP segmentSizeSEXP, SEXP alphabetSizeSEXP, SEXP iSAXSEXP) {
