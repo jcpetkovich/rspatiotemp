@@ -1,3 +1,5 @@
+##' @import parallel
+
 #' Extract features using Wavelet Packlet Decomposition, compute nodal energies then convert to SAX.
 #' @title To WPD, to SAX (toWPDSAX)
 #' @param timeSeries The time series to be converted.
@@ -187,7 +189,7 @@ createModel.path.dm <- function(data.path, exp2, hidAlphabetSize){
 #' @export
 createModels.path.dm <- function(data.path, exp2, hidAlphabetSize){
   all.files = file.path(data.path,list.files(data.path))
-  models = lapply(all.files, function(file){createModel.path.dm(file,exp2,hidAlphabetSize)})
+  models = mclapply(all.files, function(file){createModel.path.dm(file,exp2,hidAlphabetSize)}, mc.cores = detectCores())
   return(models)
 }
 
