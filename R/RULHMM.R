@@ -1,6 +1,6 @@
 ##' @import parallel
 
-#' Extract features using Wavelet Packlet Decomposition, compute nodal energies then convert to SAX.
+#' Extract features using Wavelet Packet Decomposition, compute nodal energies then convert to SAX.
 #' @title To WPD, to SAX (toWPDSAX)
 #' @param timeSeries The time series to be converted.
 #' @param SAXalphabetSize The alphabet size used for the SAX conversion.
@@ -145,6 +145,7 @@ createModel.path <- function(data.path,SAXalphabetSize,SAXgroupSize,exp2,hidAlph
 #' @param SAXgroupSize The size of each group to be converted to a single SAX symbol.
 #' @param exp2 Two to the power of exp2 will be the size of each group fed into the WPD.
 #' @param hidAlphabetSize The alphabet size of the hidden sequence.
+#' @param tab True or False, using the modified tab version of the RUL HMM algorithm.
 #' @return A list of HMM generated from the time series.
 #' @export
 createModels.path <- function(data.path,SAXalphabetSize,SAXgroupSize,exp2,hidAlphabetSize, tab){
@@ -223,6 +224,14 @@ createModel.path.dm.tab <- function(data.path, exp2, hidAlphabetSize){
   return(createModel.dm.tab(data,exp2,hidAlphabetSize))
 }
 
+#' Create a single hidden markov model from the given time series located at the file path using the depmixS4 package with a tab of all states.
+#' @title Create HMM (createModel.path.dm.tab)
+#' @param data.path The file path to the data.
+#' @param exp2 Two to the power of exp2 will be the size of each group fed into the WPD.
+#' @param hidAlphabetSize The alphabet size of the hidden sequence.
+#' @param maxSize Only generate the model using that amount of data from the file.
+#' @return A HMM generated from the time series.
+#' @export
 createPartModel.path.dm.tab <- function(data.path, exp2, hidAlphabetSize,maxSize){
   #timeSeries = rspatiotemp::readToVecPart(data.path,maxSize)
   load(data.path)
@@ -244,6 +253,14 @@ createModels.path.dm.tab <- function(data.path, exp2, hidAlphabetSize){
   return(models)
 }
 
+#' Create a several hidden markov model for the sets of data located in the given file path using the depmixS4 package with a tab of all states.
+#' @title Create HMM (createModels.path.dm.tab)
+#' @param data.path The file path to the sets data.
+#' @param exp2 Two to the power of exp2 will be the size of each group fed into the WPD.
+#' @param hidAlphabetSize The alphabet size of the hidden sequence.
+#' @param maxSize Only generate the model using that amount of data from the file.
+#' @return A list of HMM generated from the time series.
+#' @export
 createPartModels.path.dm.tab <- function(data.path, exp2, hidAlphabetSize,maxSize){
   all.files = file.path(data.path,list.files(data.path))
   models = lapply(all.files, function(file){createModel.path.dm.tab(file,exp2,hidAlphabetSize)})
@@ -258,6 +275,7 @@ createPartModels.path.dm.tab <- function(data.path, exp2, hidAlphabetSize,maxSiz
 #' @param exp2 Two to the power of exp2 will be the size of each group fed into the WPD.
 #' @param lastStateScanNum The amount of states scanned when finding the last sequence state.
 #' @param confidenceCoef A constant used when computing the lower and upper bounds of the RUL.
+#' @param tab True or False, using the modified tab version of the RUL HMM algorithm.
 #' @return The estimated pessimistic remaining useful life with an upper and lower bound.
 #' @export
 RUL.HMM <- function(timeSeries, models, SAXalphabetSize, SAXgroupSize, exp2, lastStateScanNum, confidenceCoef, tab){
@@ -344,6 +362,14 @@ RUL.dm.tab <- function(timeSeries, models, exp2, confidenceCoef){
   return(list(Model = chosenModelIndex, Lower = mid-error, Middle = mid, Upper = mid+error))
 }
 
+#' Compute the remaining useful life using HMMs using the package depmixS4 and tabs of states
+#' @title Remaining useful life using HMM (RUL.HMM)
+#' @param timeSeries The time series to be converted.
+#' @param trainData.path Path to the training data for partial model generation.
+#' @param models The generated hidden markov models. Output from createModel(s).dm.tab*
+#' @param exp2 Two to the power of exp2 will be the size of each group fed into the WPD.
+#' @param confidenceCoef A constant used when computing the lower and upper bounds of the RUL.
+#' @return The estimated remaining useful life with an upper and lower bound.
 #' @export
 RULpartial.dm.tab <- function(timeSeries, trainData.path, models, exp2, confidenceCoef){
   hidAlphabetSize = nrow(models[[1]]$Transition)
@@ -360,7 +386,14 @@ RULpartial.dm.tab <- function(timeSeries, trainData.path, models, exp2, confiden
   return(list(Model = chosenModelIndex, Lower = mid-error, Middle = mid, Upper = mid+error))
 }
 
-pickPartModel.dm.tab <- function(timeSeries, partialModels, exp2, hidAlphabetSize,wpdNum){
+#' Choosing best partial model using the forward algorithm.
+#' @title Pick Partial Model Depmix Tab (pickPartModel.dm.tab)
+#' @param timeSeries The test time series data to be matched with a partial model.
+#' @param partialModels Generated partial models to be paired.
+#' @param wpdNum The observed sequence converted to nodal energies.
+#' @param The index of the paired model.
+#' @export
+pickPartModel.dm.tab <- function(timeSeries, partialModels,exp2, hidAlphabetSize, wpdNum){
   len = length(partialModels)
   probScore = numeric()
   for(i in 1:len){

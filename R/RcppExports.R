@@ -249,6 +249,12 @@ viterbiProbDepmix <- function(transProb, emisProb, obsSeq, hidSeq) {
     .Call('rspatiotemp_viterbiProbDepmix', PACKAGE = 'rspatiotemp', transProb, emisProb, obsSeq, hidSeq)
 }
 
+#' Viterbi Algorithm for Continuous Hidden Markov Models.
+#' @title Viterbi Continuous (viterbiCont)
+#' @param transProb A matrix containing the transition probabilities.
+#' @param emisProb A matrix containing the emission probability distributions.
+#' @param obsSeq A vecor containing the observed sequence.
+#' @return The most probably hidden sequence given the HMM and observed sequence by the viterbi algorithm.
 #' @export
 viterbiCont <- function(transProb, emisProb, obsSeq) {
     .Call('rspatiotemp_viterbiCont', PACKAGE = 'rspatiotemp', transProb, emisProb, obsSeq)

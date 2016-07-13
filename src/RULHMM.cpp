@@ -224,10 +224,10 @@ NumericVector viterbiProbDepmix(NumericMatrix transProb, NumericMatrix emisProb,
   std::vector<double> forwProb;
   forwProb.reserve(obsSeq.size());
   forwProb.resize(obsSeq.size());
-  double obsVal = fabs(emisProb.at(0,hidSeq.at(0)-1)-obsSeq.at(0)) + emisProb.at(0,hidSeq.at(0)-1);
+  double obsVal = 1 - fabs(emisProb.at(0,hidSeq.at(0)-1)-obsSeq.at(0)) + emisProb.at(0,hidSeq.at(0)-1);
   forwProb.at(0) = log(R::pnorm5(obsVal,emisProb.at(0,hidSeq.at(0)-1),emisProb.at(1,hidSeq.at(0)-1),1,0));
   for(int i = 1; i < obsSeq.size(); i++){
-    double obsVal = fabs(emisProb.at(0,hidSeq.at(i)-1)-obsSeq.at(i)) + emisProb.at(0,hidSeq.at(i)-1);
+    double obsVal = 1 - fabs(emisProb.at(0,hidSeq.at(i)-1)-obsSeq.at(i)) + emisProb.at(0,hidSeq.at(i)-1);
     forwProb.at(i) = log(R::pnorm5(obsVal,emisProb.at(0,hidSeq.at(i)-1),emisProb.at(1,hidSeq.at(i)-1),1,0)) + log(transProb.at(hidSeq.at(i-1)-1,hidSeq.at(i)-1)) + forwProb.at(i-1);
   }
   return wrap(forwProb.at(forwProb.size()-1));
@@ -239,6 +239,12 @@ struct nodeVit{
   double logProb;
 };
 
+//' Viterbi Algorithm for Continuous Hidden Markov Models.
+//' @title Viterbi Continuous (viterbiCont)
+//' @param transProb A matrix containing the transition probabilities.
+//' @param emisProb A matrix containing the emission probability distributions.
+//' @param obsSeq A vecor containing the observed sequence.
+//' @return The most probably hidden sequence given the HMM and observed sequence by the viterbi algorithm.
 //' @export
 // [[Rcpp::export]]
 NumericVector viterbiCont(NumericMatrix transProb, NumericMatrix emisProb, std::vector<double> obsSeq){

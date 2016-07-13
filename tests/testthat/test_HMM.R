@@ -12,5 +12,5 @@ test_that("Forward Algorithm",{
 })
 
 test_that("Viterbi Probability Values",{
-  expect_equal(viterbiProbVal(transProb,emisProb,initProb,c(1,3),c(2,1)),c(0.25,0.03))
+  expect_equal(viterbiProbVal(transProb,emisProb,initProb,c(1,3),c(2,1)),c(0.025,0.001))
 })

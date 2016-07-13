@@ -15,3 +15,12 @@ readToVecPart <- function(data.path, maxSize){
   data = as.numeric(data)
   return(data[1:maxSize])
 }
+
+convertData <- function(file.path){
+  all.files = file.path(file.path,list.files(file.path))
+  len = length(all.files)
+  for(i in 1:len){
+    data = read.csv(all.files[i])
+
+  }
+}
