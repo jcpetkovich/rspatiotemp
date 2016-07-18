@@ -229,6 +229,100 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// mean
+double mean(std::vector<double> data);
+RcppExport SEXP rspatiotemp_mean(SEXP dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<double> >::type data(dataSEXP);
+    __result = Rcpp::wrap(mean(data));
+    return __result;
+END_RCPP
+}
+// stdDev
+double stdDev(std::vector<double> data, double mean);
+RcppExport SEXP rspatiotemp_stdDev(SEXP dataSEXP, SEXP meanSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<double> >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< double >::type mean(meanSEXP);
+    __result = Rcpp::wrap(stdDev(data, mean));
+    return __result;
+END_RCPP
+}
+// rms
+double rms(std::vector<double> data);
+RcppExport SEXP rspatiotemp_rms(SEXP dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<double> >::type data(dataSEXP);
+    __result = Rcpp::wrap(rms(data));
+    return __result;
+END_RCPP
+}
+// kurtosis
+double kurtosis(std::vector<double> data, double mean, double stdDev);
+RcppExport SEXP rspatiotemp_kurtosis(SEXP dataSEXP, SEXP meanSEXP, SEXP stdDevSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<double> >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< double >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< double >::type stdDev(stdDevSEXP);
+    __result = Rcpp::wrap(kurtosis(data, mean, stdDev));
+    return __result;
+END_RCPP
+}
+// skewness
+double skewness(std::vector<double> data, double mean, double stdDev);
+RcppExport SEXP rspatiotemp_skewness(SEXP dataSEXP, SEXP meanSEXP, SEXP stdDevSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<double> >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< double >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< double >::type stdDev(stdDevSEXP);
+    __result = Rcpp::wrap(skewness(data, mean, stdDev));
+    return __result;
+END_RCPP
+}
+// lineIntegral
+double lineIntegral(std::vector<double> data);
+RcppExport SEXP rspatiotemp_lineIntegral(SEXP dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<double> >::type data(dataSEXP);
+    __result = Rcpp::wrap(lineIntegral(data));
+    return __result;
+END_RCPP
+}
+// energy
+double energy(std::vector<double> data);
+RcppExport SEXP rspatiotemp_energy(SEXP dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<double> >::type data(dataSEXP);
+    __result = Rcpp::wrap(energy(data));
+    return __result;
+END_RCPP
+}
+// allFeatures
+List allFeatures(std::vector<double> dataH, std::vector<double> dataV);
+RcppExport SEXP rspatiotemp_allFeatures(SEXP dataHSEXP, SEXP dataVSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<double> >::type dataH(dataHSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type dataV(dataVSEXP);
+    __result = Rcpp::wrap(allFeatures(dataH, dataV));
+    return __result;
+END_RCPP
+}
 // getEnergy
 NumericVector getEnergy(NumericMatrix wpdData);
 RcppExport SEXP rspatiotemp_getEnergy(SEXP wpdDataSEXP) {

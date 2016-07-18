@@ -176,6 +176,46 @@ meanAndStd <- function(probMatX) {
     .Call('rspatiotemp_meanAndStd', PACKAGE = 'rspatiotemp', probMatX)
 }
 
+#' @export
+mean <- function(data) {
+    .Call('rspatiotemp_mean', PACKAGE = 'rspatiotemp', data)
+}
+
+#' @export
+stdDev <- function(data, mean) {
+    .Call('rspatiotemp_stdDev', PACKAGE = 'rspatiotemp', data, mean)
+}
+
+#' @export
+rms <- function(data) {
+    .Call('rspatiotemp_rms', PACKAGE = 'rspatiotemp', data)
+}
+
+#' @export
+kurtosis <- function(data, mean, stdDev) {
+    .Call('rspatiotemp_kurtosis', PACKAGE = 'rspatiotemp', data, mean, stdDev)
+}
+
+#' @export
+skewness <- function(data, mean, stdDev) {
+    .Call('rspatiotemp_skewness', PACKAGE = 'rspatiotemp', data, mean, stdDev)
+}
+
+#' @export
+lineIntegral <- function(data) {
+    .Call('rspatiotemp_lineIntegral', PACKAGE = 'rspatiotemp', data)
+}
+
+#' @export
+energy <- function(data) {
+    .Call('rspatiotemp_energy', PACKAGE = 'rspatiotemp', data)
+}
+
+#' @export
+allFeatures <- function(dataH, dataV) {
+    .Call('rspatiotemp_allFeatures', PACKAGE = 'rspatiotemp', dataH, dataV)
+}
+
 #' Computes nodal energy of a single column of a WPD. Called by the 'getEnergy' function.
 #' @title Compute single nodal energy (nodeEnergy)
 #' @param node A NumericVector containing a single column of the WPD values.

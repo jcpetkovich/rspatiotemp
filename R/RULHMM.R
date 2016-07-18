@@ -415,3 +415,25 @@ mode <- function(v){
 #  result = RULpartial.dm.tab(data, data.path, models, 12, 0.25)
 #  save(result, file = paste("resultPartDMTab",substr(all.files[i],52,55),".Rd",sep = ""))
 #}
+
+# data.path = "~/Downloads/FEMTOBearingDataSet/Learning_set/Bearing3_2/"
+# all.files = file.path(data.path,list.files(data.path))
+# len = length(all.files)
+# horizontal = numeric()
+# vertical = numeric()
+# for(i in 1:len){
+#   readcsv = read.csv(all.files[i],header = FALSE)
+#   horizontal = c(horizontal, readcsv$V5)
+#   vertical = c(vertical, readcsv$V6)
+# }
+# horizontal = matrix(horizontal, ncol = len)
+# vertical = matrix(vertical, ncol = len)
+# save(horizontal, file = "bearingDataH3_2.Rd")
+# save(vertical, file = "bearingDataV3_2.Rd")
+# remove(horizontal)
+# remove(vertical)
+# remove(readcsv)
+# remove(i)
+# remove(len)
+# remove(all.files)
+# remove(data.path)
