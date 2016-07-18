@@ -1,4 +1,5 @@
 #include <math.h>
+#include <omp.h>
 #include <Rcpp.h>
 using namespace Rcpp;
 
