@@ -126,32 +126,61 @@ featureEx <- function(dataH, dataV, binNumH, binNumV, groupSize, max.order){
     LIH = c(LIH,partFeatures$lineIntH)
     LIV = c(LIV,partFeatures$lineIntV)
 
-    if(length(arMH) == 0)
-      arMH = ar(dataHTemp,order.max = max.order)$ar
-    else
-      arMH = c(arMH,ar(dataHTemp,order.max = max.order)$ar)
+    if(length(arMH) == 0){
+      arMH = ar(dataHTemp,order.max = max.order)$ar[1:max.order]
+    }
+    else{
+      arMH = rbind(arMH,ar(dataHTemp,order.max = max.order)$ar[1:max.order])
+    }
 
-    if(length(arMV) == 0)
-      arMV = ar(dataVTemp,order.max = max.order)$ar
-    else
-      arMV = c(arMV,ar(dataVTemp,order.max = max.order)$ar)
+    if(length(arMV) == 0){
+      arMV = ar(dataVTemp,order.max = max.order)$ar[1:max.order]
+    }
+    else{
+      arMV = rbind(arMV,ar(dataVTemp,order.max = max.order)$ar[1:max.order])
+    }
 
     EnergyH = c(EnergyH,partFeatures$energyH)
     EnergyV = c(EnergyV,partFeatures$energyV)
   }
-  p2p = data.frame(Horizontal = peak2peakH, Vertical = peak2peakV)
-  maxPeak = data.frame(Horizontal = maxPeakH, Vertical = maxPeakV)
-  RMS = data.frame(Horizontal = RMSH, Vertical = RMSV)
-  Kurtosis = data.frame(Horizontal = KurtosisH, Vertical = KurtosisV)
-  Skewness = data.frame(Horizontal = SkewnessH, Vertical = SkewnessV)
-  Entropy = data.frame(Horizontal = EntropyH, Vertical = EntropyV)
-  arithmeticMeanPSD = data.frame(Horizontal = amPSDH, Vertical = amPSDV)
-  LineIntegral = data.frame(Horizontal = LIH, Vertical = LIV)
-  arModels = data.frame(Horizontal = arMH, Vertical = arMV)
-  Energy = data.frame(Horizontal = EnergyH, Vertical = EnergyV)
-  return(list(peak2peakH,peak2peakV,maxPeakH,maxPeakV,RMSH,RMSV,KurtosisH,KurtosisV,SkewnessH,SkewnessV,MI,EntropyH,EntropyV,amPSDH,amPSDV,LIH,LIV,arMH,arMV,EnergyH,EnergyV))
+  done = c(0,0)
+  for(i in 0:(max.order-1)){
+    index = max.order - i
+    lenH = length(which(is.na(as.data.frame(arMH)[,index])))
+
+    if((lenH == len)&&(done[1] == 0))
+      arMH = arMH[,-index]
+    else
+      done[1] = 1
+
+    lenV = length(which(is.na(arMV[,index])))
+    if((lenV == len)&&(done[2] == 0))
+      arMV = arMV[,-index]
+    else
+      done[2] = 1
+    if((done[1]==1)&&(done[2]==1))
+      break
+  }
+  arMH[is.na(arMH)] = 0
+  arMV[is.na(arMV)] = 0
+  # p2p = data.frame(Horizontal = peak2peakH, Vertical = peak2peakV)
+  # maxPeak = data.frame(Horizontal = maxPeakH, Vertical = maxPeakV)
+  # RMS = data.frame(Horizontal = RMSH, Vertical = RMSV)
+  # Kurtosis = data.frame(Horizontal = KurtosisH, Vertical = KurtosisV)
+  # Skewness = data.frame(Horizontal = SkewnessH, Vertical = SkewnessV)
+  # Entropy = data.frame(Horizontal = EntropyH, Vertical = EntropyV)
+  # arithmeticMeanPSD = data.frame(Horizontal = amPSDH, Vertical = amPSDV)
+  # LineIntegral = data.frame(Horizontal = LIH, Vertical = LIV)
+  # arModels = data.frame(Horizontal = arMH, Vertical = arMV)
+  # Energy = data.frame(Horizontal = EnergyH, Vertical = EnergyV)
+  result = list(peak2peakH,peak2peakV,maxPeakH,maxPeakV,RMSH,RMSV,KurtosisH,KurtosisV,SkewnessH,SkewnessV,MI,EntropyH,EntropyV,amPSDH,amPSDV,LIH,LIV,EnergyH,EnergyV)
+  arResultH = as.list(as.data.frame(arMH))
+  arResultV = as.list(as.data.frame(arMV))
+  result = append(result,arResultH)
+  result = append(result,arResultV)
+  return(result)
 }
-# [1]pk2pkH [2]pk2pkV [3]MaxPeakH [4]MaxPeakV [5]rmsH [6]rmsV [7]KurtosisH [8]KurtosisV [9]SkewnessH [10]SkewnessV [11]MutInfo [12]EntropyH [13]EntropyV [14]amPSDH [15]amPSDV [16]LineIntH [17]LineIntV [18]arModelH [19]arModelV [20]EnergyH [21]EnergyV
+# [1]pk2pkH [2]pk2pkV [3]MaxPeakH [4]MaxPeakV [5]rmsH [6]rmsV [7]KurtosisH [8]KurtosisV [9]SkewnessH [10]SkewnessV [11]MutInfo [12]EntropyH [13]EntropyV [14]amPSDH [15]amPSDV [16]LineIntH [17]LineIntV [18]EnergyH [19]EnergyV [20...]arModelH [21...]arModelV
 
 SU <- function(features,binNum){
   len = length(features)
@@ -179,4 +208,34 @@ SU <- function(features,binNum){
   }
   result = matrix(result,len,len)
   return(1-result)
+}
+
+RMSE <- function(intercept, coefficient, data, clusterNum){
+  len = length(clusterNum)
+  sum = 0
+  for(i in 1:len){
+    error = coefficient*clusterNum[i]+intercept-data[i]
+    sum = sum + error*error
+  }
+  result = sqrt(sum/len)
+  return(result)
+}
+
+#' @export
+knee <- function(su){
+  hc = hclust(as.dist(su))
+  len = length(hc$height)-1
+  hc$height = rev(hc$height)
+  RMSEc = numeric()
+  for(i in 2:len){
+    df1 = data.frame(height = hc$height[2:i], clusterNum = 2:i)
+    l1 = lm(height~clusterNum, df1)
+    rmse1 = RMSE(l1$coefficients[1],l1$coefficients[2],df1$height,df1$clusterNum)
+    df2 = data.frame(height = hc$height[(i+1):len], clusterNum = (i+1):len)
+    l2 = lm(height~clusterNum, df2)
+    rmse2 = RMSE(l2$coefficients[1],l2$coefficients[2],df2$height,df2$clusterNum)
+    RMSE = (i-1)*rmse1/len + (len-i+1)*rmse2/len
+    RMSEc = c(RMSEc,RMSE)
+  }
+  return(which.min(RMSEc)+1)
 }
