@@ -327,7 +327,7 @@ saveModel.fftloess <- function(data.path){
   v1_2=as.numeric(unlist(v1_2))
   load(paste(data.path,"bearingDataV1_3.Rd",sep=""))
   v1_3=vertical
-  v1_3=as.numeric(unlist(v1_4))
+  v1_3=as.numeric(unlist(v1_3))
   load(paste(data.path,"bearingDataV1_4.Rd",sep=""))
   v1_4=vertical
   v1_4=as.numeric(unlist(v1_4))
