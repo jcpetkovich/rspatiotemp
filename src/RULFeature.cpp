@@ -218,7 +218,7 @@ List allFeatures(std::vector<double> dataH, std::vector<double> dataV){
   double skewH = 0;
   double skewV = 0;
 
-#pragma omp parallel for reduction(+:sdH, +:sdV, +:kurtosisH, +:kurtosisV, +:skewH, +:skewV)
+//#pragma omp parallel for reduction(+:sdH, +:sdV, +:kurtosisH, +:kurtosisV, +:skewH, +:skewV)
   for(int i = 0; i < len; i++){
     //stdDev
     sdH += (dataH.at(i)-meanH)*(dataH.at(i)-meanH);
