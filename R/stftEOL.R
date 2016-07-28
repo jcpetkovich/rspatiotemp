@@ -1,5 +1,6 @@
 library(h2o)
 h2o.init()
+#' @export
 get.fftloess <- function(data, groupSize){
   boundSeq = seq(from=1,to = (length(data)+1), by = groupSize)
   len = length(boundSeq) - 1
@@ -20,6 +21,7 @@ get.fftloess <- function(data, groupSize){
   return(lo)
 }
 
+#' @export
 get.fftloess.skip <- function(data, groupSize,smoothSampleNum){
   boundSeq = seq(from=1,to = (length(data)+1), by = groupSize)
   len = length(boundSeq) - 1
@@ -40,6 +42,7 @@ get.fftloess.skip <- function(data, groupSize,smoothSampleNum){
   return(lo)
 }
 
+#' @export
 get.fftloess.d10 <- function(data, groupSize){
   boundSeq = seq(from=1,to = (length(data)+1), by = groupSize)
   len = length(boundSeq) - 1
@@ -62,6 +65,7 @@ get.fftloess.d10 <- function(data, groupSize){
   return(lo)
 }
 
+#' @export
 createModel.h2o.logic <- function(data,groupSize,degradStartPercent){
   fftloess = get.fftloess(data,groupSize)
   rul = c(rep(TRUE,as.integer(nrow(fftloess)*degradStartPercent)),rep(FALSE,(nrow(fftloess))-as.integer(nrow(fftloess)*degradStartPercent)))
@@ -71,6 +75,7 @@ createModel.h2o.logic <- function(data,groupSize,degradStartPercent){
   return(fftloess.dl)
 }
 
+#' @export
 createModel.h2o.logic.save <- function(data,groupSize,degradStartPercent,bearingNum){
   fftloess = get.fftloess(data,groupSize)
   rul = c(rep(TRUE,as.integer(nrow(fftloess)*degradStartPercent)),rep(FALSE,(nrow(fftloess))-as.integer(nrow(fftloess)*degradStartPercent)))
@@ -81,6 +86,7 @@ createModel.h2o.logic.save <- function(data,groupSize,degradStartPercent,bearing
   save(fftloess.dl, file = paste("model",bearingNum,".Rd",sep=""))
 }
 
+#' @export
 predict.h2o.logic <- function(data,groupSize, model){
   testfft = get.fftloess(data,groupSize)
   testfft.df = data.frame(testfft)
@@ -90,6 +96,7 @@ predict.h2o.logic <- function(data,groupSize, model){
   return(predictions$predict)
 }
 
+#' @export
 status.h2o.logic <- function(dataH,dataV,modelH,modelV,groupSize,n){
   if(length(predH) > (n*groupSize)){
     up = length(predH)
@@ -124,6 +131,7 @@ status.h2o.logic <- function(dataH,dataV,modelH,modelV,groupSize,n){
   }
 }
 
+#' @export
 predict.status.h2o.logic <- function(dataH,dataV,groupSize, modelH,modelV,n){
   predictionsH = predict.h2o.logic(dataH,groupSize,modelH)
   predictionsV = predict.h2o.logic(dataV,groupSize,modelV)
@@ -165,6 +173,7 @@ predict.status.h2o.logic <- function(dataH,dataV,groupSize, modelH,modelV,n){
   return(status)
 }
 
+#' @export
 selfRUL.h2o.fftloess <- function(data,groupSize,degradStartPercent){
   fftloess = get.fftloess(data,groupSize)
   rul = c(rep(nrow(fftloess),as.integer(nrow(fftloess)*degradStartPercent)),seq(from=(nrow(fftloess)), to = 1, length.out = (nrow(fftloess))-as.integer(nrow(fftloess)*degradStartPercent)))
@@ -176,6 +185,7 @@ selfRUL.h2o.fftloess <- function(data,groupSize,degradStartPercent){
   plot.ts(predictions$predict)
 }
 
+#' @export
 selfRUL.h2o.fftloess.logic <- function(data,groupSize,degradStartPercent){
   fftloess = get.fftloess(data,groupSize)
   rul = c(rep(TRUE,as.integer(nrow(fftloess)*degradStartPercent)),rep(FALSE,(nrow(fftloess))-as.integer(nrow(fftloess)*degradStartPercent)))
@@ -187,6 +197,7 @@ selfRUL.h2o.fftloess.logic <- function(data,groupSize,degradStartPercent){
   plot.ts(predictions$predict)
 }
 
+#' @export
 selfRUL.h2o.fftloess.logic.skip <- function(data,groupSize,degradStartPercent,smoothSampleNum){
   fftloess = get.fftloess.skip(data,groupSize,smoothSampleNum)
   #rul = c(rep(nrow(fftloess),as.integer(nrow(fftloess)*degradStartPercent)),seq(from=(nrow(fftloess)), to = 1, length.out = (nrow(fftloess))-as.integer(nrow(fftloess)*degradStartPercent)))
@@ -199,6 +210,7 @@ selfRUL.h2o.fftloess.logic.skip <- function(data,groupSize,degradStartPercent,sm
   plot.ts(predictions$predict)
 }
 
+#' @export
 selfRUL.h2o.fftloess.d10 <- function(data,groupSize,degradStartPercent){
   fftloess = get.fftloess.d10(data,groupSize)
   rul = c(rep(nrow(fftloess),as.integer(nrow(fftloess)*degradStartPercent)),seq(from=(nrow(fftloess)), to = 1, length.out = (nrow(fftloess))-as.integer(nrow(fftloess)*degradStartPercent)))
@@ -210,6 +222,7 @@ selfRUL.h2o.fftloess.d10 <- function(data,groupSize,degradStartPercent){
   plot.ts(predictions$predict)
 }
 
+#' @export
 plot.fftloess <- function(data, groupSize){
 
   fft1 = abs(fft(data[1:groupSize]))
@@ -230,6 +243,7 @@ plot.fftloess <- function(data, groupSize){
   lines(lo3,col= "green")
 }
 
+#' @export
 plot.fftloess.d10 <- function(data, groupSize){
   fft1 = abs(fft(data[1:groupSize]))
   fft3 = abs(fft(data[(length(data)-groupSize+1):(length(data))]))
@@ -252,6 +266,7 @@ plot.fftloess.d10 <- function(data, groupSize){
   lines(lb:ub,lo3,col= "green")
 }
 
+#' @export
 saveModel.fftloess <- function(data.path){
   load(paste(data.path,"bearingDataH1_1.Rd",sep=""))
   h1_1=horizontal
