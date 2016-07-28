@@ -15,7 +15,7 @@ ndiffsWindow <- function(data, stepSize, windowSize){
   return(result)
 }
 
-#' Computes the stationarityy using tseries::adf.test of several windows of the original data
+#' Computes the stationarity using tseries::adf.test of several windows of the original data
 #' @title tseries adf.test Window (adf.testWindow)
 #' @param data The time series data
 #' @param stepSize The about of elements to jump after each window

@@ -79,7 +79,7 @@ double degradation(std::vector<double> dataH, std::vector<double> dataV, int alp
 //' Compute the accumulated degradation at each time interval.
 //' Accumulated Degradation (accDegrad)
 //' @param dataH A matrix containing the horizontal vibration data.
-//' @param dataV A matrix containing the vertival vibration data.
+//' @param dataV A matrix containing the vertical vibration data.
 //' @param alpha A choosen constant value used when computing the R value. The R value takes into account the influence of the time.
 //' @param beta A choosen constant value used when computing the F value. The F value takes into account the influence of the acceleration.
 //' @param weight The weight must be less or equal to 1. It is the percent weight of the horizontal data.
