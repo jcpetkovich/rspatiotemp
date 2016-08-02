@@ -7,17 +7,16 @@ get.fftloess <- function(data, groupSize){
   time = 1:groupSize
   lowerBound = boundSeq[1]
   upperBound = boundSeq[2] - 1
-  fft = abs(fft(data[lowerBound:upperBound]))
+  fft = scale(abs(fft(data[lowerBound:upperBound])))
   lo = predict(loess(fft~time))
 
   for(i in 2:len){
     lowerBound = boundSeq[i]
     upperBound = boundSeq[i+1] - 1
-    fft = abs(fft(data[lowerBound:upperBound]))
+    fft = scale(abs(fft(data[lowerBound:upperBound])))
     lo1 = predict(loess(fft~time))
     lo = rbind(lo,lo1)
   }
-
   return(lo)
 }
 
@@ -264,7 +263,6 @@ selfRUL.h2o.fftloess.d10 <- function(data,groupSize,degradStartPercent){
 
 #' @export
 plot.fftloess <- function(data, groupSize){
-
   fft1 = abs(fft(data[1:groupSize]))
   fft3 = abs(fft(data[(length(data)-groupSize+1):(length(data))]))
   if(groupSize%%2 == 0){
