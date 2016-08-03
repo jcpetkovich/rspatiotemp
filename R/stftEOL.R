@@ -7,17 +7,17 @@ get.fftloess <- function(data, groupSize){
   time = 1:groupSize
   lowerBound = boundSeq[1]
   upperBound = boundSeq[2] - 1
-  fft = scale(abs(fft(data[lowerBound:upperBound])))
+  fft = abs(fft(data[lowerBound:upperBound]))
   lo = predict(loess(fft~time))
 
   for(i in 2:len){
     lowerBound = boundSeq[i]
     upperBound = boundSeq[i+1] - 1
-    fft = scale(abs(fft(data[lowerBound:upperBound])))
+    fft = abs(fft(data[lowerBound:upperBound]))
     lo1 = predict(loess(fft~time))
     lo = rbind(lo,lo1)
   }
-  return(lo)
+  return(scale(lo))
 }
 
 #' @export
@@ -73,6 +73,20 @@ createModel.h2o.logic <- function(data,groupSize,degradStartPercent){
   fftloess.dl = h2o.deeplearning(x = 1:(ncol(fftloess)),y = ncol(fftloess.df),training_frame = fftloess.hex)
   return(fftloess.dl)
 }
+
+load("~/projects/rspatiotemp/stftData/fftloessH1_1.Rd")
+all.fftloess = fftloess.df
+load("~/projects/rspatiotemp/stftData/fftloessH1_2.Rd")
+all.fftloess = rbind(all.fftloess,fftloess.df)
+load("~/projects/rspatiotemp/stftData/fftloessH1_3.Rd")
+all.fftloess = rbind(all.fftloess,fftloess.df)
+load("~/projects/rspatiotemp/stftData/fftloessH1_4.Rd")
+all.fftloess = rbind(all.fftloess,fftloess.df)
+load("~/projects/rspatiotemp/stftData/fftloessH1_5.Rd")
+all.fftloess = rbind(all.fftloess,fftloess.df)
+load("~/projects/rspatiotemp/stftData/fftloessH1_6.Rd")
+all.fftloess = rbind(all.fftloess,fftloess.df)
+
 
 #' @export
 createModel.h2o.logic.save <- function(data,groupSize,degradStartPercent,bearingNum){
