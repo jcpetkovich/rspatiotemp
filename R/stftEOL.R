@@ -74,18 +74,18 @@ createModel.h2o.logic <- function(data,groupSize,degradStartPercent){
   return(fftloess.dl)
 }
 
-load("~/projects/rspatiotemp/stftData/fftloessH1_1.Rd")
-all.fftloess = fftloess.df
-load("~/projects/rspatiotemp/stftData/fftloessH1_2.Rd")
-all.fftloess = rbind(all.fftloess,fftloess.df)
-load("~/projects/rspatiotemp/stftData/fftloessH1_3.Rd")
-all.fftloess = rbind(all.fftloess,fftloess.df)
-load("~/projects/rspatiotemp/stftData/fftloessH1_4.Rd")
-all.fftloess = rbind(all.fftloess,fftloess.df)
-load("~/projects/rspatiotemp/stftData/fftloessH1_5.Rd")
-all.fftloess = rbind(all.fftloess,fftloess.df)
-load("~/projects/rspatiotemp/stftData/fftloessH1_6.Rd")
-all.fftloess = rbind(all.fftloess,fftloess.df)
+# load("~/projects/rspatiotemp/stftData/fftloessH1_1.Rd")
+# all.fftloess = fftloess.df
+# load("~/projects/rspatiotemp/stftData/fftloessH1_2.Rd")
+# all.fftloess = rbind(all.fftloess,fftloess.df)
+# load("~/projects/rspatiotemp/stftData/fftloessH1_3.Rd")
+# all.fftloess = rbind(all.fftloess,fftloess.df)
+# load("~/projects/rspatiotemp/stftData/fftloessH1_4.Rd")
+# all.fftloess = rbind(all.fftloess,fftloess.df)
+# load("~/projects/rspatiotemp/stftData/fftloessH1_5.Rd")
+# all.fftloess = rbind(all.fftloess,fftloess.df)
+# load("~/projects/rspatiotemp/stftData/fftloessH1_6.Rd")
+# all.fftloess = rbind(all.fftloess,fftloess.df)
 
 
 #' @export
@@ -862,5 +862,105 @@ plot.fftloess.d10 <- function(data, groupSize){
 #' load("modelV3_2.Rd")
 #' load("modelV3_3.Rd")
 
-
+# load("~/projects/rspatiotemp/stftData/fftloessH1_1.Rd")
+# fftloessH1_1 = fftloess.df
+# load("~/projects/rspatiotemp/stftData/fftloessH1_2.Rd")
+# fftloessH1_2 = fftloess.df
+# load("~/projects/rspatiotemp/stftData/fftloessH1_3.Rd")
+# fftloessH1_3 = fftloess.df
+# load("~/projects/rspatiotemp/stftData/fftloessH1_4.Rd")
+# fftloessH1_4 = fftloess.df
+# load("~/projects/rspatiotemp/stftData/fftloessH1_5.Rd")
+# fftloessH1_5 = fftloess.df
+# load("~/projects/rspatiotemp/stftData/fftloessH1_6.Rd")
+# fftloessH1_6 = fftloess.df
+# load("~/projects/rspatiotemp/stftData/fftloessH1_7.Rd")
+# fftloessH1_7 = fftloess.df
+#
+# trainH1_1 = rbind(fftloessH1_2,fftloessH1_3)
+# trainH1_1 = rbind(trainH1_1,fftloessH1_4)
+# trainH1_1 = rbind(trainH1_1,fftloessH1_5)
+# trainH1_1 = rbind(trainH1_1,fftloessH1_6)
+# trainH1_1 = rbind(trainH1_1,fftloessH1_7)
+#
+# trainH1_2 = rbind(fftloessH1_1,fftloessH1_3)
+# trainH1_2 = rbind(trainH1_2,fftloessH1_4)
+# trainH1_2 = rbind(trainH1_2,fftloessH1_5)
+# trainH1_2 = rbind(trainH1_2,fftloessH1_6)
+# trainH1_2 = rbind(trainH1_2,fftloessH1_7)
+#
+# trainH1_3 = rbind(fftloessH1_2,fftloessH1_1)
+# trainH1_3 = rbind(trainH1_3,fftloessH1_4)
+# trainH1_3 = rbind(trainH1_3,fftloessH1_5)
+# trainH1_3 = rbind(trainH1_3,fftloessH1_6)
+# trainH1_3 = rbind(trainH1_3,fftloessH1_7)
+#
+# trainH1_4 = rbind(fftloessH1_2,fftloessH1_3)
+# trainH1_4 = rbind(trainH1_4,fftloessH1_1)
+# trainH1_4 = rbind(trainH1_4,fftloessH1_5)
+# trainH1_4 = rbind(trainH1_4,fftloessH1_6)
+# trainH1_4 = rbind(trainH1_4,fftloessH1_7)
+#
+# trainH1_5 = rbind(fftloessH1_2,fftloessH1_3)
+# trainH1_5 = rbind(trainH1_5,fftloessH1_4)
+# trainH1_5 = rbind(trainH1_5,fftloessH1_1)
+# trainH1_5 = rbind(trainH1_5,fftloessH1_6)
+# trainH1_5 = rbind(trainH1_5,fftloessH1_7)
+#
+# trainH1_6 = rbind(fftloessH1_2,fftloessH1_3)
+# trainH1_6 = rbind(trainH1_6,fftloessH1_4)
+# trainH1_6 = rbind(trainH1_6,fftloessH1_5)
+# trainH1_6 = rbind(trainH1_6,fftloessH1_1)
+# trainH1_6 = rbind(trainH1_6,fftloessH1_7)
+#
+# trainH1_7 = rbind(fftloessH1_2,fftloessH1_3)
+# trainH1_7 = rbind(trainH1_7,fftloessH1_4)
+# trainH1_7 = rbind(trainH1_7,fftloessH1_5)
+# trainH1_7 = rbind(trainH1_7,fftloessH1_6)
+# trainH1_7 = rbind(trainH1_7,fftloessH1_1)
+#
+# trainH1_1 = as.h2o(trainH1_1)
+# trainH1_2 = as.h2o(trainH1_2)
+# trainH1_3 = as.h2o(trainH1_3)
+# trainH1_4 = as.h2o(trainH1_4)
+# trainH1_5 = as.h2o(trainH1_5)
+# trainH1_6 = as.h2o(trainH1_6)
+# trainH1_7 = as.h2o(trainH1_7)
+#
+# trainH1_1.dl = h2o.deeplearning(x = 1:2048, y = 2049, training_frame = trainH1_1)
+# trainH1_2.dl = h2o.deeplearning(x = 1:2048, y = 2049, training_frame = trainH1_2)
+# trainH1_3.dl = h2o.deeplearning(x = 1:2048, y = 2049, training_frame = trainH1_3)
+# trainH1_4.dl = h2o.deeplearning(x = 1:2048, y = 2049, training_frame = trainH1_4)
+# trainH1_5.dl = h2o.deeplearning(x = 1:2048, y = 2049, training_frame = trainH1_5)
+# trainH1_6.dl = h2o.deeplearning(x = 1:2048, y = 2049, training_frame = trainH1_6)
+# trainH1_7.dl = h2o.deeplearning(x = 1:2048, y = 2049, training_frame = trainH1_7)
+#
+# predH1_1 = h2o.predict(trainH1_1.dl,as.h2o(fftloessH1_1))
+# predH1_1 = as.data.frame(predH1_1)$predict
+# save(predH1_1, file = "allpredH1_1.Rd")
+#
+# predH1_2 = h2o.predict(trainH1_2.dl,as.h2o(fftloessH1_2))
+# predH1_2 = as.data.frame(predH1_2)$predict
+# save(predH1_2, file = "allpredH1_2.Rd")
+#
+# predH1_3 = h2o.predict(trainH1_3.dl,as.h2o(fftloessH1_3))
+# predH1_3 = as.data.frame(predH1_3)$predict
+# save(predH1_3, file = "allpredH1_3.Rd")
+#
+# predH1_4 = h2o.predict(trainH1_4.dl,as.h2o(fftloessH1_4))
+# predH1_4 = as.data.frame(predH1_4)$predict
+# save(predH1_4, file = "allpredH1_4.Rd")
+#
+# predH1_5 = h2o.predict(trainH1_5.dl,as.h2o(fftloessH1_5))
+# predH1_5 = as.data.frame(predH1_5)$predict
+# save(predH1_5, file = "allpredH1_5.Rd")
+#
+# predH1_6 = h2o.predict(trainH1_6.dl,as.h2o(fftloessH1_6))
+# predH1_6 = as.data.frame(predH1_6)$predict
+# save(predH1_6, file = "allpredH1_6.Rd")
+#
+# predH1_7 = h2o.predict(trainH1_7.dl,as.h2o(fftloessH1_7))
+# predH1_7 = as.data.frame(predH1_7)$predict
+# save(predH1_7, file = "allpredH1_7.Rd")
+#
 

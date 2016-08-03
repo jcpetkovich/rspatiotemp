@@ -1,3 +1,12 @@
+library(wavethresh)
+library(dplyr)
+library(dtplyr)
+library(data.table)
+library(pryr)
+library(tidyr)
+library(mtspreprocess)
+library(ggplot2)
+
 ##' @import parallel
 
 #' Extract features using Wavelet Packet Decomposition, compute nodal energies then convert to SAX.
@@ -405,6 +414,28 @@ pickPartModel.dm.tab <- function(timeSeries, partialModels,exp2, hidAlphabetSize
 mode <- function(v){
   uniqv = unique(v)
   return(uniqv[which.max(tabulate(match(v, uniqv)))])
+}
+
+#' @export
+getEnergies.wpd <- function(timeSeries, exp2, levels){
+  by = 2^exp2
+  splitIndex = seq(from=0,to=length(timeSeries),by=by)
+  splitLen = length(splitIndex)-1
+  levelLen = (2^levels)-1
+  energies = numeric()
+  for(i in 1:splitLen){
+    lowBound = splitIndex[i]+1
+    upBound = splitIndex[i+1]
+    pieceWP = wavethresh::wp(timeSeries[lowBound:upBound])
+    energy = lapply(0:levelLen, function(pkt) getpacket(pieceWP, level = (exp2-levels), index = pkt)) %>% lapply(rms) %>% {total <- sum(unlist(.)); unlist(.) / total}
+    energies = c(energies, energy)
+  }
+  energies <- matrix(energies, ncol = (levelLen+1), byrow = T)
+  #energies <- tbl_dt(energies) %>% mts.add.time
+  #energies %>% gather(value, variable, -t)
+
+  #ggplot(energies %>% gather(variable, value)) + geom_line(aes(x = t, y = value, colour = variable)) + theme(legend.position = "none")
+  return(energies)
 }
 
 #data.path = "~/Documents/untitled folder 2/RULHMMmodels/"
