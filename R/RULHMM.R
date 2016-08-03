@@ -1,11 +1,5 @@
 library(wavethresh)
 library(dplyr)
-library(dtplyr)
-library(data.table)
-library(pryr)
-library(tidyr)
-library(mtspreprocess)
-library(ggplot2)
 
 ##' @import parallel
 
