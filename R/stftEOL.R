@@ -78,9 +78,9 @@ createModel.h2o.levels <- function(data,groupSize,levelDegradVec){
   fftloess = get.fftloess(data,groupSize)
   rul = rep(1,nrow(fftloess))
   lb = 1
-  for(i in 2:(length(levelDegradVec))){
-    ub = as.integer(levelDegradVec[(i-1)] * (nrow(fftloess)))
-    rul[lb:ub] = length(levelDegradVec) - (i - 2)
+  for(i in 1:(length(levelDegradVec))){
+    ub = as.integer(levelDegradVec[(i)] * (nrow(fftloess)))
+    rul[lb:ub] = length(levelDegradVec) - (i-2)
     lb = ub
   }
   rul = as.character(rul)
@@ -88,30 +88,6 @@ createModel.h2o.levels <- function(data,groupSize,levelDegradVec){
   fftloess.hex = as.h2o(fftloess.df)
   fftloess.dl = h2o.deeplearning(x = 1:(ncol(fftloess)),y = ncol(fftloess.df),training_frame = fftloess.hex)
   return(fftloess.dl)
-}
-# load("~/projects/rspatiotemp/stftData/fftloessH1_1.Rd")
-# all.fftloess = fftloess.df
-# load("~/projects/rspatiotemp/stftData/fftloessH1_2.Rd")
-# all.fftloess = rbind(all.fftloess,fftloess.df)
-# load("~/projects/rspatiotemp/stftData/fftloessH1_3.Rd")
-# all.fftloess = rbind(all.fftloess,fftloess.df)
-# load("~/projects/rspatiotemp/stftData/fftloessH1_4.Rd")
-# all.fftloess = rbind(all.fftloess,fftloess.df)
-# load("~/projects/rspatiotemp/stftData/fftloessH1_5.Rd")
-# all.fftloess = rbind(all.fftloess,fftloess.df)
-# load("~/projects/rspatiotemp/stftData/fftloessH1_6.Rd")
-# all.fftloess = rbind(all.fftloess,fftloess.df)
-
-
-#' @export
-createModel.h2o.logic.save <- function(data,groupSize,degradStartPercent,bearingNum){
-  fftloess = get.fftloess(data,groupSize)
-  rul = c(rep(TRUE,as.integer(nrow(fftloess)*degradStartPercent)),rep(FALSE,(nrow(fftloess))-as.integer(nrow(fftloess)*degradStartPercent)))
-  fftloess.df = data.frame(fftloess, rul = rul)
-  save(fftloess.df,file = paste("fftloess",bearingNum,".Rd",sep = ""))
-  fftloess.hex = as.h2o(fftloess.df)
-  fftloess.dl = h2o.deeplearning(x = 1:(ncol(fftloess)),y = ncol(fftloess.df),training_frame = fftloess.hex)
-  save(fftloess.dl, file = paste("model",bearingNum,".Rd",sep=""))
 }
 
 #' @export
@@ -158,48 +134,6 @@ status.h2o.logic <- function(dataH,dataV,modelH,modelV,groupSize,n){
     }
   }
 }
-
-#' #' @export
-#' predict.status.h2o.logic <- function(dataH,dataV,groupSize, modelH,modelV,n){
-#'   predictionsH = predict.h2o.logic(dataH,groupSize,modelH)
-#'   predictionsV = predict.h2o.logic(dataV,groupSize,modelV)
-#'   boundSeq = c(1:(n-1),seq(from=n,to = (length(predictionsH)+1), by = n))
-#'   status = numeric()
-#'   for(i in boundSeq){
-#'     lo = numeric()
-#'     if(i < n)
-#'       lo = 1
-#'     else
-#'       lo = i - n + 1
-#'
-#'     predH = predictionsH[lo:i]
-#'     predV = predictionsV[lo:i]
-#'
-#'     if(all(predH == TRUE)){
-#'       if(all(predV == FALSE)){
-#'         status = c(status,-1)
-#'       }
-#'       else{
-#'         status = c(status,1)
-#'       }
-#'     }
-#'     else if(all(predH == FALSE)){
-#'       status = c(status,-1)
-#'     }
-#'     else{
-#'       if(all(predV == TRUE)){
-#'         status = c(status,1)
-#'       }
-#'       else if(all(predV == FALSE)){
-#'         status = c(status,-1)
-#'       }
-#'       else{
-#'         status = c(status,0)
-#'       }
-#'     }
-#'   }
-#'   return(status)
-#' }
 
 #' @export
 predict.status.h2o.logic <- function(predictH,predictV,n){

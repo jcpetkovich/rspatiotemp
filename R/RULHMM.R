@@ -413,6 +413,12 @@ mode <- function(v){
   return(uniqv[which.max(tabulate(match(v, uniqv)))])
 }
 
+#' Compute Nodal Energies using Wavelet Packet Decomposition
+#' @title Compute Nodal Energy WPD (getEnergies.wpd)
+#' @param timeSeries The time series data.
+#' @param exp2 Two to the power of exp2 will be the size of each group fed into the WPD of each group fed into the WPD.
+#' @param levels The level of the WPD to compute the energy for.
+#' @return A matrix of energies for each frequency band on the level chosen
 #' @export
 getEnergies.wpd <- function(timeSeries, exp2, levels){
   by = 2^exp2
@@ -428,40 +434,5 @@ getEnergies.wpd <- function(timeSeries, exp2, levels){
     energies = c(energies, energy)
   }
   energies <- matrix(energies, ncol = (levelLen+1), byrow = T)
-  #energies <- tbl_dt(energies) %>% mts.add.time
-  #energies %>% gather(value, variable, -t)
-
-  #ggplot(energies %>% gather(variable, value)) + geom_line(aes(x = t, y = value, colour = variable)) + theme(legend.position = "none")
   return(energies)
 }
-
-#data.path = "~/Documents/untitled folder 2/RULHMMmodels/"
-#all.files = file.path(data.path,list.files(data.path))
-#len = length(all.files)
-#for(i in 1:len){
-#  data = readToVecPart(all.files[i],20480)
-#  result = RULpartial.dm.tab(data, data.path, models, 12, 0.25)
-#  save(result, file = paste("resultPartDMTab",substr(all.files[i],52,55),".Rd",sep = ""))
-#}
-
-# data.path = "~/Downloads/FEMTOBearingDataSet/Learning_set/Bearing3_2/"
-# all.files = file.path(data.path,list.files(data.path))
-# len = length(all.files)
-# horizontal = numeric()
-# vertical = numeric()
-# for(i in 1:len){
-#   readcsv = read.csv(all.files[i],header = FALSE)
-#   horizontal = c(horizontal, readcsv$V5)
-#   vertical = c(vertical, readcsv$V6)
-# }
-# horizontal = matrix(horizontal, ncol = len)
-# vertical = matrix(vertical, ncol = len)
-# save(horizontal, file = "bearingDataH3_2.Rd")
-# save(vertical, file = "bearingDataV3_2.Rd")
-# remove(horizontal)
-# remove(vertical)
-# remove(readcsv)
-# remove(i)
-# remove(len)
-# remove(all.files)
-# remove(data.path)
