@@ -205,8 +205,9 @@ createModels.path.dm <- function(data.path, exp2, hidAlphabetSize){
 #' @return A HMM generated from the time series.
 #' @export
 createModel.dm.tab <- function(timeSeries, exp2, hidAlphabetSize){
-  wpd = wpdEnergy(timeSeries,exp2)
-  wpd = data.frame(energy = wpd)
+  #wpd = wpdEnergy(timeSeries,exp2)
+  wpd = getEnergies.wpd(timeSeries,exp2,3)
+  wpd = data.frame(energy = wpd[,1])
   hmm = trainHMM.dm(wpd,hidAlphabetSize)
   MaSD = meanStdDevR(hmm$vitSeq,hidAlphabetSize,T)
   return(list(Transition = hmm$Transition,Emission = hmm$Emission,Initial = hmm$Initial, Mean  = MaSD$mean, StdDev = MaSD$stdDev,Tab = MaSD$tab, Final = hmm$vitSeq[length(hmm$vitSeq)]))
@@ -348,8 +349,10 @@ RUL.HMM.dm <- function(timeSeries, models, exp2, lastStateScanNum, confidenceCoe
 #' @export
 RUL.dm.tab <- function(timeSeries, models, exp2, confidenceCoef){
   hidAlphabetSize = nrow(models[[1]]$Transition)
-  wpdNum = wpdEnergy(timeSeries,exp2)
-  wpd = data.frame(energy = wpdNum)
+  #wpdNum = wpdEnergy(timeSeries,exp2)
+  #wpd = data.frame(energy = wpdNum)
+  wpdNum = getEnergies.wpd(timeSeries,exp2,3)
+  wpd = data.frame(energy = wpdNum[,1])
   hmm = trainHMM.dm(wpd,hidAlphabetSize)
   MaSD = meanStdDevR(hmm$vitSeq,hidAlphabetSize,T)
   len = length(models)

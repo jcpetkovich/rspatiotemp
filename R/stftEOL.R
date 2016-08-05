@@ -74,6 +74,21 @@ createModel.h2o.logic <- function(data,groupSize,degradStartPercent){
   return(fftloess.dl)
 }
 
+createModel.h2o.levels <- function(data,groupSize,levelDegradVec){
+  fftloess = get.fftloess(data,groupSize)
+  rul = rep(1,nrow(fftloess))
+  lb = 1
+  for(i in 2:(length(levelDegradVec))){
+    ub = as.integer(levelDegradVec[(i-1)] * (nrow(fftloess)))
+    rul[lb:ub] = length(levelDegradVec) - (i - 2)
+    lb = ub
+  }
+  rul = as.character(rul)
+  fftloess.df = data.frame(fftloess, rul = rul)
+  fftloess.hex = as.h2o(fftloess.df)
+  fftloess.dl = h2o.deeplearning(x = 1:(ncol(fftloess)),y = ncol(fftloess.df),training_frame = fftloess.hex)
+  return(fftloess.dl)
+}
 # load("~/projects/rspatiotemp/stftData/fftloessH1_1.Rd")
 # all.fftloess = fftloess.df
 # load("~/projects/rspatiotemp/stftData/fftloessH1_2.Rd")
@@ -963,5 +978,3 @@ plot.fftloess.d10 <- function(data, groupSize){
 # predH1_7 = as.data.frame(predH1_7)$predict
 # save(predH1_7, file = "allpredH1_7.Rd")
 #
-
-
