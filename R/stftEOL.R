@@ -1,7 +1,14 @@
 library(h2o)
 h2o.init()
+
+#' Compute the stft of the inputted data and smooth it using loess regression
+#' @title STFT loess regression (get.fftloess)
+#' @param data The time series data to be transformed
+#' @param groupSize The size of the groups that will be fft'd
+#' @param scale TRUE or FALSE whether or not to scale the output
+#' @return The smoothed stft of the inputted data
 #' @export
-get.fftloess <- function(data, groupSize){
+get.fftloess <- function(data, groupSize,scale){
   boundSeq = seq(from=1,to = (length(data)+1), by = groupSize)
   len = length(boundSeq) - 1
   time = 1:groupSize
@@ -17,9 +24,17 @@ get.fftloess <- function(data, groupSize){
     lo1 = predict(loess(fft~time))
     lo = rbind(lo,lo1)
   }
-  return(scale(lo))
+  if(scale)
+    return(scale(lo))
+  return(lo)
 }
 
+#' Compute the stft of the inputted data, smooth it using loess regression, but only take a set number of stft pieces
+#' @title pieces of STFT loess regression (get.fftloess)
+#' @param data The time series data to be transformed
+#' @param groupSize The size of the groups that will be fft'd
+#' @param smoothSampleNum The number of stft pieces to take
+#' @return The smoothed stft of the inputted data
 #' @export
 get.fftloess.skip <- function(data, groupSize,smoothSampleNum){
   boundSeq = seq(from=1,to = (length(data)+1), by = groupSize)
@@ -41,32 +56,15 @@ get.fftloess.skip <- function(data, groupSize,smoothSampleNum){
   return(lo)
 }
 
+#' Create a deep learning model of smoothed stft data with degradation starting at a chosen percentage to predict a logical variable
+#' @title Create Logical Deep Learning Model (createModel.h2o.logic)
+#' @param data The time series data to be transformed and used to train the model
+#' @param groupSize The size of the groups that will be fft'd
+#' @param degradStartPercent The percentage of the data to pass until the system begins to degrade
+#' @return A deep learning model of the data to predict a logical output
 #' @export
-get.fftloess.d10 <- function(data, groupSize){
-  boundSeq = seq(from=1,to = (length(data)+1), by = groupSize)
-  len = length(boundSeq) - 1
-  winSize = as.integer(groupSize/20)
-  lb = as.integer(groupSize/2-winSize)
-  ub = as.integer(groupSize/2+winSize)
-  time = 1:groupSize
-  lowerBound = boundSeq[1]
-  upperBound = boundSeq[2] - 1
-  fft = abs(fft(data[lowerBound:upperBound]))
-  lo = predict(loess(fft~time))[lb:ub]
-
-  for(i in 2:len){
-    lowerBound = boundSeq[i]
-    upperBound = boundSeq[i+1] - 1
-    fft = abs(fft(data[lowerBound:upperBound]))
-    lo1 = predict(loess(fft~time))[lb:ub]
-    lo = rbind(lo,lo1)
-  }
-  return(lo)
-}
-
-#' @export
-createModel.h2o.logic <- function(data,groupSize,degradStartPercent){
-  fftloess = get.fftloess(data,groupSize)
+createModel.h2o.logic <- function(data,groupSize,degradStartPercent,scale){
+  fftloess = get.fftloess(data,groupSize,scale)
   rul = c(rep(TRUE,as.integer(nrow(fftloess)*degradStartPercent)),rep(FALSE,(nrow(fftloess))-as.integer(nrow(fftloess)*degradStartPercent)))
   fftloess.df = data.frame(fftloess, rul = rul)
   fftloess.hex = as.h2o(fftloess.df)
@@ -74,8 +72,15 @@ createModel.h2o.logic <- function(data,groupSize,degradStartPercent){
   return(fftloess.dl)
 }
 
-createModel.h2o.levels <- function(data,groupSize,levelDegradVec){
-  fftloess = get.fftloess(data,groupSize)
+#' Create a deep learning model of smoothed stft data with degradation starting at a chosen percentage to predict a chosen number of output states
+#' @title Create Multi-State Deep Learning Model (createModel.h2o.logic)
+#' @param data The time series data to be transformed and used to train the model
+#' @param groupSize The size of the groups that will be fft'd
+#' @param levelDegradVec The percentage of the data to pass until the system changes to the lower state
+#' @return A deep learning model of the data to predict a state
+#' @export
+createModel.h2o.levels <- function(data,groupSize,levelDegradVec,scale){
+  fftloess = get.fftloess(data,groupSize,scale)
   rul = rep(1,nrow(fftloess))
   lb = 1
   for(i in 1:(length(levelDegradVec))){
@@ -90,8 +95,14 @@ createModel.h2o.levels <- function(data,groupSize,levelDegradVec){
   return(fftloess.dl)
 }
 
+#' Predict the dependent variable based on the inputted test data and trained model
+#' @title Predict STFT (predict.h2o.stft)
+#' @param data The test data
+#' @param groupSize The size of the groups that will be fft'd
+#' @param model The trained model either returned from 'createModel.h2o.logic' or 'createModel.h2o.levels' functions
+#' @return The predicted output based on the trianed model and test data
 #' @export
-predict.h2o.logic <- function(data,groupSize, model){
+predict.h2o.stft <- function(data,groupSize, model){
   testfft = get.fftloess(data,groupSize)
   testfft.df = data.frame(testfft)
   testfft.hex = as.h2o(testfft.df)
@@ -213,18 +224,6 @@ selfRUL.h2o.fftloess.logic.skip <- function(data,groupSize,degradStartPercent,sm
 }
 
 #' @export
-selfRUL.h2o.fftloess.d10 <- function(data,groupSize,degradStartPercent){
-  fftloess = get.fftloess.d10(data,groupSize)
-  rul = c(rep(nrow(fftloess),as.integer(nrow(fftloess)*degradStartPercent)),seq(from=(nrow(fftloess)), to = 1, length.out = (nrow(fftloess))-as.integer(nrow(fftloess)*degradStartPercent)))
-  fftloess.df = data.frame(rul = rul, fftloess)
-  fftloess.hex = as.h2o(fftloess.df)
-  fftloess.dl = h2o.deeplearning(x = 2:(ncol(fftloess)),y = 1,training_frame = fftloess.hex)
-  predictions <- h2o.predict(fftloess.dl, fftloess.hex)
-  predictions = as.data.frame(predictions)
-  plot.ts(predictions$predict)
-}
-
-#' @export
 plot.fftloess <- function(data, groupSize){
   fft1 = abs(fft(data[1:groupSize]))
   fft3 = abs(fft(data[(length(data)-groupSize+1):(length(data))]))
@@ -242,29 +241,6 @@ plot.fftloess <- function(data, groupSize){
   lines(lo1,col= "red")
   lines(lo2,col= "blue")
   lines(lo3,col= "green")
-}
-
-#' @export
-plot.fftloess.d10 <- function(data, groupSize){
-  fft1 = abs(fft(data[1:groupSize]))
-  fft3 = abs(fft(data[(length(data)-groupSize+1):(length(data))]))
-  if(groupSize%%2 == 0){
-    fft2 = abs(fft(data[(length(data)/2 - groupSize/2 + 1):(length(data)/2 + groupSize/2)]))
-  }
-  else{
-    fft2 = abs(fft(data[(length(data)/2 - groupSize/2 + 0.5):(length(data)/2) + groupSize/2 - 0.5]))
-  }
-  winSize = as.integer(groupSize/20)
-  lb = as.integer(groupSize/2-winSize)
-  ub = as.integer(groupSize/2+winSize)
-  time = 1:groupSize
-  lo1 = predict(loess(fft1~time))[lb:ub]
-  lo2 = predict(loess(fft2~time))[lb:ub]
-  lo3 = predict(loess(fft3~time))[lb:ub]
-  plot.ts(fft1)
-  lines(lb:ub,lo1,col= "red")
-  lines(lb:ub,lo2,col= "blue")
-  lines(lb:ub,lo3,col= "green")
 }
 
 #' #' @export
