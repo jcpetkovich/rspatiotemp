@@ -65,11 +65,17 @@ get.fftloess.skip <- function(data, groupSize,smoothSampleNum){
 #' @export
 createModel.h2o.logic <- function(data,groupSize,degradStartPercent,scale){
   fftloess = get.fftloess(data,groupSize,scale)
+  if(scale){
+    center = attr(fftloess,"scaled:center")
+    scaleBy = attr(fftloess,"scaled:scale")
+  }
   rul = c(rep(TRUE,as.integer(nrow(fftloess)*degradStartPercent)),rep(FALSE,(nrow(fftloess))-as.integer(nrow(fftloess)*degradStartPercent)))
   fftloess.df = data.frame(fftloess, rul = rul)
   fftloess.hex = as.h2o(fftloess.df)
   fftloess.dl = h2o.deeplearning(x = 1:(ncol(fftloess)),y = ncol(fftloess.df),training_frame = fftloess.hex)
-  return(fftloess.dl)
+  if(scale)
+    return(list(model = fftloess.dl,groupSize = groupSize, scale = scale, center = center, scaleBy = scaleBy))
+  return(list(model = fftloess.dl,groupSize = groupSize, scale = scale))
 }
 
 #' Create a deep learning model of smoothed stft data with degradation starting at a chosen percentage to predict a chosen number of output states
