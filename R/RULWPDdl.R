@@ -11,8 +11,12 @@
 createModel.h2o.wpd.rul <- function(data,exp2,levels,degradStartPercent,scale){
   energy = getEnergies.wpd(data,exp2,levels)
   time = 1:nrow(energy)
-  for(i in 1:ncol(energy))
-    energy[,i] = predict(loess(energy[,i]~time))
+  registerDoMC()
+  energy = foreach(i = 1:ncol(energy),.combine = 'cbind',.inorder = TRUE) %dopar% {
+    predict(loess(energy[,i]~time))
+  }
+  # for(i in 1:ncol(energy))
+  #   energy[,i] = predict(loess(energy[,i]~time))
 
   rul = c(rep(nrow(energy),as.integer(nrow(energy)*degradStartPercent)),seq(from=(nrow(energy)), to = 1, length.out = (nrow(energy))-as.integer(nrow(energy)*degradStartPercent)))
   energy.df = data.frame(energy,rul = rul)
@@ -34,8 +38,12 @@ predict.h2o.wpd.rul <- function(data,model){
   model = model$model
   energy = getEnergies.wpd(data,exp2,levels)
   time = 1:nrow(energy)
-  for(i in 1:ncol(energy))
-    energy[,i] = predict(loess(energy[,i]~time))
+  registerDoMC()
+  energy = foreach(i = 1:ncol(energy),.combine = 'cbind',.inorder = TRUE) %dopar% {
+    predict(loess(energy[,i]~time))
+  }
+  # for(i in 1:ncol(energy))
+  #   energy[,i] = predict(loess(energy[,i]~time))
   rul = rep(0,nrow(energy))
   energy.df = data.frame(energy,rul = rul)
   energy.hex = as.h2o(energy.df)

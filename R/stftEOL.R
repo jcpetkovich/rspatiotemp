@@ -12,18 +12,24 @@ get.fftloess <- function(data, groupSize,scale){
   boundSeq = seq(from=1,to = (length(data)+1), by = groupSize)
   len = length(boundSeq) - 1
   time = 1:groupSize
-  lowerBound = boundSeq[1]
-  upperBound = boundSeq[2] - 1
-  fft = abs(fft(data[lowerBound:upperBound]))
-  lo = predict(loess(fft~time))
-
-  for(i in 2:len){
+  # lowerBound = boundSeq[1]
+  # upperBound = boundSeq[2] - 1
+  # fft = abs(fft(data[lowerBound:upperBound]))
+  # lo = predict(loess(fft~time))
+  registerDoMC()
+  lo = foreach(i = 1:len,.combine = 'rbind',.inorder = TRUE) %dopar% {
     lowerBound = boundSeq[i]
     upperBound = boundSeq[i+1] - 1
     fft = abs(fft(data[lowerBound:upperBound]))
-    lo1 = predict(loess(fft~time))
-    lo = rbind(lo,lo1)
+    predict(loess(fft~time))
   }
+  # for(i in 2:len){
+  #   lowerBound = boundSeq[i]
+  #   upperBound = boundSeq[i+1] - 1
+  #   fft = abs(fft(data[lowerBound:upperBound]))
+  #   lo1 = predict(loess(fft~time))
+  #   lo = rbind(lo,lo1)
+  # }
   if(scale)
     return(scale(lo))
   return(lo)
@@ -116,17 +122,20 @@ createModel.h2o.levels <- function(data,groupSize,levelDegradVec,scale){
 predict.h2o.stft <- function(data, model){
   groupSize = model$groupSize
   scale = model$scale
-
   testfft = get.fftloess(data,groupSize,FALSE)
   if(scale){
     center = model$center
     scaleBy = model$scaleBy
-    for(i in 1:groupSize)
-      testfft[,i] = (testfft[,i]-center[i])/scaleBy[i]
+    registerDoMC()
+    testfft = foreach(i = 1:groupSize, .combine = 'cbind',.inorder = TRUE) %dopar% {
+      (testfft[,i]-center[i])/scaleBy[i]
+    }
+    # for(i in 1:groupSize)
+    #   testfft[,i] = (testfft[,i]-center[i])/scaleBy[i]
   }
   testfft.df = data.frame(testfft)
   testfft.hex = as.h2o(testfft.df)
-  predictions = h2o.predict(model,testfft.hex)
+  predictions = h2o.predict(model$model,testfft.hex)
   predictions = as.data.frame(predictions)
   return(predictions$predict)
 }
