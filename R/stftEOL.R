@@ -81,6 +81,10 @@ createModel.h2o.logic <- function(data,groupSize,degradStartPercent,scale){
 #' @export
 createModel.h2o.levels <- function(data,groupSize,levelDegradVec,scale){
   fftloess = get.fftloess(data,groupSize,scale)
+  if(scale){
+    center = attr(fftloess,"scaled:center")
+    scaleBy = attr(fftloess,"scaled:scale")
+  }
   rul = rep(1,nrow(fftloess))
   lb = 1
   for(i in 1:(length(levelDegradVec))){
@@ -92,18 +96,28 @@ createModel.h2o.levels <- function(data,groupSize,levelDegradVec,scale){
   fftloess.df = data.frame(fftloess, rul = rul)
   fftloess.hex = as.h2o(fftloess.df)
   fftloess.dl = h2o.deeplearning(x = 1:(ncol(fftloess)),y = ncol(fftloess.df),training_frame = fftloess.hex)
-  return(fftloess.dl)
+  if(scale)
+    return(list(model = fftloess.dl,groupSize = groupSize, scale = scale, center = center, scaleBy = scaleBy))
+  return(list(model = fftloess.dl,groupSize = groupSize, scale = scale))
 }
 
 #' Predict the dependent variable based on the inputted test data and trained model
 #' @title Predict STFT (predict.h2o.stft)
 #' @param data The test data
-#' @param groupSize The size of the groups that will be fft'd
 #' @param model The trained model either returned from 'createModel.h2o.logic' or 'createModel.h2o.levels' functions
 #' @return The predicted output based on the trianed model and test data
 #' @export
-predict.h2o.stft <- function(data,groupSize, model){
-  testfft = get.fftloess(data,groupSize)
+predict.h2o.stft <- function(data, model){
+  groupSize = model$groupSize
+  scale = model$scale
+
+  testfft = get.fftloess(data,groupSize,FALSE)
+  if(scale){
+    center = model$center
+    scaleBy = model$scaleBy
+    for(i in 1:groupSize)
+      testfft[,i] = (testfft[,i]-center[i])/scaleBy[i]
+  }
   testfft.df = data.frame(testfft)
   testfft.hex = as.h2o(testfft.df)
   predictions = h2o.predict(model,testfft.hex)
