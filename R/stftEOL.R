@@ -1,4 +1,6 @@
 library(h2o)
+library(doMC)
+library(foreach)
 h2o.init()
 
 #' Compute the stft of the inputted data and smooth it using loess regression
@@ -133,7 +135,7 @@ predict.h2o.stft <- function(data, model){
     # for(i in 1:groupSize)
     #   testfft[,i] = (testfft[,i]-center[i])/scaleBy[i]
   }
-  testfft.df = data.frame(testfft,rul = rep(0,nrow(testfft)))
+  testfft.df = data.frame(testfft)
   testfft.hex = as.h2o(testfft.df)
   predictions = h2o.predict(model$model,testfft.hex)
   predictions = as.data.frame(predictions)
