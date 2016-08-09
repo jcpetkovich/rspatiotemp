@@ -425,14 +425,21 @@ getEnergies.wpd <- function(timeSeries, exp2, levels){
   splitIndex = seq(from=0,to=length(timeSeries),by=by)
   splitLen = length(splitIndex)-1
   levelLen = (2^levels)-1
-  energies = numeric()
-  for(i in 1:splitLen){
+  registerDoMC()
+  energies = foreach(i = 1:splitLen, .combine = 'c', .inorder = TRUE) %dopar% {
     lowBound = splitIndex[i]+1
-    upBound = splitIndex[i+1]
-    pieceWP = wavethresh::wp(timeSeries[lowBound:upBound])
-    energy = lapply(0:levelLen, function(pkt) getpacket(pieceWP, level = (exp2-levels), index = pkt)) %>% lapply(rms) %>% {total <- sum(unlist(.)); unlist(.) / total}
-    energies = c(energies, energy)
+      upBound = splitIndex[i+1]
+      pieceWP = wavethresh::wp(timeSeries[lowBound:upBound])
+      lapply(0:levelLen, function(pkt) getpacket(pieceWP, level = (exp2-levels), index = pkt)) %>% lapply(rms) %>% {total <- sum(unlist(.)); unlist(.) / total}
   }
+  # energies = numeric()
+  # for(i in 1:splitLen){
+  #   lowBound = splitIndex[i]+1
+  #   upBound = splitIndex[i+1]
+  #   pieceWP = wavethresh::wp(timeSeries[lowBound:upBound])
+  #   energy = lapply(0:levelLen, function(pkt) getpacket(pieceWP, level = (exp2-levels), index = pkt)) %>% lapply(rms) %>% {total <- sum(unlist(.)); unlist(.) / total}
+  #   energies = c(energies, energy)
+  # }
   energies <- matrix(energies, ncol = (levelLen+1), byrow = T)
   return(energies)
 }

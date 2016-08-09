@@ -33,8 +33,8 @@ get.fftloess <- function(data, groupSize,scale){
   #   lo = rbind(lo,lo1)
   # }
   if(scale)
-    return(scale(lo))
-  return(lo)
+    return(scale(unname(lo)))
+  return(unname(lo))
 }
 
 #' Compute the stft of the inputted data, smooth it using loess regression, but only take a set number of stft pieces
@@ -73,17 +73,16 @@ get.fftloess.skip <- function(data, groupSize,smoothSampleNum){
 #' @export
 createModel.h2o.logic <- function(data,groupSize,degradStartPercent,scale){
   fftloess = get.fftloess(data,groupSize,scale)
-  if(scale){
-    center = attr(fftloess,"scaled:center")
-    scaleBy = attr(fftloess,"scaled:scale")
-  }
   rul = c(rep(TRUE,as.integer(nrow(fftloess)*degradStartPercent)),rep(FALSE,(nrow(fftloess))-as.integer(nrow(fftloess)*degradStartPercent)))
   fftloess.df = data.frame(fftloess, rul = rul)
   fftloess.hex = as.h2o(fftloess.df)
   fftloess.dl = h2o.deeplearning(x = 1:(ncol(fftloess)),y = ncol(fftloess.df),training_frame = fftloess.hex)
-  if(scale)
+  if(scale){
+    center = attr(fftloess,"scaled:center")
+    scaleBy = attr(fftloess,"scaled:scale")
     return(list(model = fftloess.dl,groupSize = groupSize, scale = scale, center = center, scaleBy = scaleBy))
-  return(list(model = fftloess.dl,groupSize = groupSize, scale = scale))
+  }
+    return(list(model = fftloess.dl,groupSize = groupSize, scale = scale))
 }
 
 #' Create a deep learning model of smoothed stft data with degradation starting at a chosen percentage to predict a chosen number of output states
@@ -107,7 +106,7 @@ createModel.h2o.levels <- function(data,groupSize,levelDegradVec,scale){
     lb = ub
   }
   rul = as.character(rul)
-  fftloess.df = data.frame(fftloess, rul = rul)
+  fftloess.df = data.frame(unname(fftloess), rul = rul)
   fftloess.hex = as.h2o(fftloess.df)
   fftloess.dl = h2o.deeplearning(x = 1:(ncol(fftloess)),y = ncol(fftloess.df),training_frame = fftloess.hex)
   if(scale)
@@ -132,12 +131,13 @@ predict.h2o.stft <- function(data, model){
     testfft = foreach(i = 1:groupSize, .combine = 'cbind',.inorder = TRUE) %dopar% {
       (testfft[,i]-center[i])/scaleBy[i]
     }
+    testfft = unname(testfft)
     # for(i in 1:groupSize)
     #   testfft[,i] = (testfft[,i]-center[i])/scaleBy[i]
   }
   testfft.df = data.frame(testfft)
   testfft.hex = as.h2o(testfft.df)
-  predictions = h2o.predict(model$model,testfft.hex)
+  predictions = h2o.predict(object = model$model,newdata = testfft.hex)
   predictions = as.data.frame(predictions)
   return(predictions$predict)
 }
