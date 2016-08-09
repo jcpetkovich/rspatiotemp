@@ -72,18 +72,3 @@ predict.h2o.wpd.rul <- function(data,model,cores = NULL){
   pred = as.data.frame(pred)
   return(pred$predict)
 }
-plot.ts(predict.h2o.wpd.rul(h1_1,modelH1_3_p0))
-plot.ts(predict.h2o.wpd.rul(h1_2,modelH1_3_p0))
-plot.ts(predict.h2o.wpd.rul(h1_3,modelH1_3_p0))
-plot.ts(predict.h2o.wpd.rul(h1_4,modelH1_3_p0))
-plot.ts(predict.h2o.wpd.rul(h1_5,modelH1_3_p0))
-plot.ts(predict.h2o.wpd.rul(h1_6,modelH1_3_p0))
-plot.ts(predict.h2o.wpd.rul(h1_7,modelH1_3_p0))
-
-df1 = createModel.h2o.wpd.rul(h1_1,8,3,0)
-df2 = createModel.h2o.wpd.rul(h1_2,8,3,0)
-df3 = createModel.h2o.wpd.rul(h1_3,8,3,0)
-df4 = createModel.h2o.wpd.rul(h1_4,8,3,0)
-df5 = createModel.h2o.wpd.rul(h1_5,8,3,0)
-df6 = createModel.h2o.wpd.rul(h1_6,8,3,0)
-df7 = createModel.h2o.wpd.rul(h1_7,8,3,0)
