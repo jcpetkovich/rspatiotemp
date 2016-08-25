@@ -368,6 +368,12 @@ RUL.dm.tab <- function(timeSeries, models, exp2, confidenceCoef){
   return(list(Model = chosenModelIndex, Lower = mid-error, Middle = mid, Upper = mid+error))
 }
 
+# boundSeq = as.integer(seq(from = 0, to = 7175680, by = 2560))
+# registerDoMC()
+# RUL = foreach(i = 1:10,.combine = 'rbind',.inorder = TRUE) %dopar% {
+#   unlist(RUL.dm.tab(h1_1[1:(717568*i)],list(modelH1_1_HMM,modelH1_1_HMM),6,0.1))
+# }
+
 #' Compute the remaining useful life using HMMs using the package depmixS4 and tabs of states
 #' @title Remaining useful life using HMM (RUL.HMM)
 #' @param timeSeries The time series to be converted.

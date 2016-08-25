@@ -128,33 +128,25 @@ predict.h2o.wpd.rul <- function(data,model,cores = NULL){
 # plot.ts(predict.h2o.wpd.rul(h1_4,model1_4))
 # plot.ts(predict.h2o.wpd.rul(h1_5,model1_5))
 # plot.ts(predict.h2o.wpd.rul(h1_6,model1_6))
+# plot.ts(predict.h2o.wpd.rul(h1_7,model1_7)
+#
+# data = list(h1_1,h1_2,h1_3,h1_4,h1_5,h1_6,h1_7)
+# model1_1 = createModel.h2o.wpd.group.rul(data[-1],8,3,0)
+# model1_2 = createModel.h2o.wpd.group.rul(data[-2],8,3,0)
+# model1_3 = createModel.h2o.wpd.group.rul(data[-3],8,3,0)
+# model1_4 = createModel.h2o.wpd.group.rul(data[-4],8,3,0)
+# model1_5 = createModel.h2o.wpd.group.rul(data[-5],8,3,0)
+# model1_6 = createModel.h2o.wpd.group.rul(data[-6],8,3,0)
+# model1_7 = createModel.h2o.wpd.group.rul(data[-7],8,3,0)
+#
+# plot.ts(predict.h2o.wpd.rul(h1_1,model1_1))
+# plot.ts(predict.h2o.wpd.rul(h1_2,model1_2))
+# plot.ts(predict.h2o.wpd.rul(h1_3,model1_3))
+# plot.ts(predict.h2o.wpd.rul(h1_4,model1_4))
+# plot.ts(predict.h2o.wpd.rul(h1_5,model1_5))
+# plot.ts(predict.h2o.wpd.rul(h1_6,model1_6))
 # plot.ts(predict.h2o.wpd.rul(h1_7,model1_7))
 #
-# df1 = createModel.h2o.wpd.rul(h1_1,8,3,0)
-# df2 = createModel.h2o.wpd.rul(h1_2,8,3,0)
-# df3 = createModel.h2o.wpd.rul(h1_3,8,3,0)
-# df4 = createModel.h2o.wpd.rul(h1_4,8,3,0)
-# df5 = createModel.h2o.wpd.rul(h1_5,8,3,0)
-# df6 = createModel.h2o.wpd.rul(h1_6,8,3,0)
-# df7 = createModel.h2o.wpd.rul(h1_7,8,3,0)
-#
-# all.df1_1 = rbind(df7,df2)
-# all.df1_1 = rbind(all.df1_1,df3)
-# all.df1_1 = rbind(all.df1_1,df4)
-# all.df1_1 = rbind(all.df1_1,df5)
-# all.df1_1 = rbind(all.df1_1,df6)
-#
-# all.df1_2 = rbind(df1,df7)
-# all.df1_2 = rbind(all.df1_2,df3)
-# all.df1_2 = rbind(all.df1_2,df4)
-# all.df1_2 = rbind(all.df1_2,df5)
-# all.df1_2 = rbind(all.df1_2,df6)
-#
-# all.df1_6 = rbind(df1,df2)
-# all.df1_6 = rbind(all.df1_6,df7)
-# all.df1_6 = rbind(all.df1_6,df3)
-# all.df1_6 = rbind(all.df1_6,df4)
-# all.df1_6 = rbind(all.df1_6,df5)
 #
 # model1_1 = h2o.deeplearning(x=1:8,y=9,training_frame = as.h2o(all.df1_1))
 # model1_2 = h2o.deeplearning(x=1:8,y=9,training_frame = as.h2o(all.df1_2))
@@ -178,4 +170,5 @@ predict.h2o.wpd.rul <- function(data,model,cores = NULL){
 # plot.ts(predict.h2o.wpd.rul(h1_3,modelH1_3p2))
 # modelH1_3p3 = createModel.h2o.wpd.group.rul(data = list(h1_1,h1_2,h1_4,h1_5,h1_6,h1_7),exp2 = 8,levels = 3,degradStartPercent = 0,hidden = c(200,200,200,200),nPast = 2,cores = 4)
 # plot.ts(predict.h2o.wpd.rul(h1_3,modelH1_3p3))
+
 
