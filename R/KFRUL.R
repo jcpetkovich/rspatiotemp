@@ -4,10 +4,11 @@ library(kernlab)
 #' @title MLP, SVM-RBF models (model.ens.h2o.rbf)
 #' @param data A matrix or vector of the independent data for the models.
 #' @param rul A vector of the inputted dependent data for the models.
+#' @param inputDropout A fraction of the features for each training row to be omitted from training inorder to improve generalization (dimension sampling).
 #' @return A list containing a MLP model created using h2o and a SVM-RBF model created using kernlab
 #' @export
-model.ens.h2o.rbf <- function(data,rul){
-  model.mlp = h2o.deeplearning(x = 1:ncol(data), y = (ncol(data)+1), training_frame = as.h2o(cbind(data,rul)),hidden = c(200,200,200))
+model.ens.h2o.rbf <- function(data,rul,inputDropout){
+  model.mlp = h2o.deeplearning(x = 1:ncol(data), y = (ncol(data)+1), training_frame = as.h2o(cbind(data,rul)),input_dropout_ratio = inputDropout)
   model.rbf = ksvm(x = data, y  = rul, kernal = "rbfdot")
   return(list(mlp = model.mlp, rbf = model.rbf))
 }
@@ -23,7 +24,7 @@ ensemble.ens.h2o <- function(data, rul, model){
   pred.mlp = as.data.frame(h2o.predict(model$mlp,as.h2o(data)))$predict
   pred.rbf = predict(model$rbf, data)
   pred = cbind(pred.mlp,pred.rbf)
-  ensemble.mlp = h2o.deeplearning(x = 1:(ncol(pred)), y = (ncol(pred)+1), training_frame = as.h2o(cbind(pred,rul)),hidden = c(200,200,200))
+  ensemble.mlp = h2o.deeplearning(x = 1:(ncol(pred)), y = (ncol(pred)+1), training_frame = as.h2o(cbind(pred,rul)))
   return(ensemble.mlp)
 }
 
@@ -45,27 +46,50 @@ validate.ens.h2o <- function(data, model, ensembleModel){
 #' @title Create Ensemble Model (createModel.ens.h2o)
 #' @param data The training data for the model
 #' @param trainingSplit The percentage to split the data by for model training, ensemble training and validation
+#' @param inputDropout A fraction of the features for each training row to be omitted from training inorder to improve generalization (dimension sampling).
+#' @param numPastVal The number of time stamps in the past to consider when computing the RUL
 #' @return An ensemble model
-createModel.ens.h2o <- function(data, trainingSplit = c(0.75,0.15,0.1)){
-  len = nrow(data)
+createModel.ens.h2o <- function(data, trainingSplit = c(0.75,0.15,0.1),inputDropout = 0, numPastVal = 0){
   # len = max(data[,1])
   inputCol = ncol(data)
 
   # rul = max(data[,1]) - data[,1]
   # rul = nrow(data):1
+  rul = foreach(i = 1:max(data[,1]), .combine = 'c', .inorder = TRUE) %do% {
+    if(numPastVal!=0){
+      rev(data[which(data[,1]==i),2])[-(1:numPastVal)]
+    }
+    else{
+      rev(data[which(data[,1]==i),2])
+    }
+  }
 
-  rul = foreach(i = 1:max(data[,1]), .combine = 'c', .inorder = TRUE) %do%
-    rev(data[which(data[,1]==i),2])
-
+  unit = data[,1]
   data = data[,-1]
-
   data = scale(data)
   scaleMean = attr(data,"scaled:center")
   scaleStd = attr(data,"scaled:scale")
-  # dataS = data
 
-  unitId = 1:len
-
+  if(numPastVal!=0){
+    counter = 0
+    registerDoMC()
+    data = foreach(i = 1:max(unit), .combine = 'rbind', .inorder = TRUE) %dopar% {
+      index = which(unit == i)
+      foreach(ii = 0:numPastVal, .combine = 'cbind', .inorder = TRUE) %do% {
+        if(ii == 0)
+          unname(data[index[1:(length(index)-numPastVal)],])
+        else if(ii == numPastVal)
+          unname(data[index[(numPastVal+1):length(index)],])
+        else
+          unname(data[index[ii:(length(index)-numPastVal + ii)],])
+      }
+    }
+    colnames(data) = foreach(i = 1:ncol(data), .combine = 'c',.inorder = TRUE) %do% {
+      paste("V",i,sep="")
+    }
+  }
+  # unitId = 1:len
+  len = nrow(data)
   modelIndex = sample(1:len, as.integer(len*trainingSplit[1]), FALSE)
   # unitId = unitId[-modelIndex]
   # modelIndex = as.numeric(unlist(sapply(modelIndex, function(x){which(data[,1]==x)})))
@@ -100,13 +124,13 @@ createModel.ens.h2o <- function(data, trainingSplit = c(0.75,0.15,0.1)){
     scaleStd = scaleStd[-removeCol]
   }
 
-  models = model.ens.h2o.rbf(dataModel, rulModel)
+  models = model.ens.h2o.rbf(dataModel, rulModel,inputDropout = inputDropout)
 
   ensembleModel = ensemble.ens.h2o(dataEnsemble, rulEnsemble, models)
 
   validPred = validate.ens.h2o(data, models, ensembleModel)
 
-  return(list(models = models,ensembleModel = ensembleModel, inputCol = inputCol, removeCol = removeCol, scaleMean = scaleMean, scaleStd = scaleStd, validate = validPred, validateRUL = rul))
+  return(list(models = models,ensembleModel = ensembleModel, inputCol = inputCol, removeCol = removeCol, scaleMean = scaleMean, scaleStd = scaleStd, validate = validPred, validateRUL = rul,numPastVal = numPastVal))
 }
 
 #' Predict Using Ensemble Model
@@ -119,12 +143,33 @@ predict.ens.h2o <- function(data, model){
     warning("Not the same amount of columns as training set")
     return(0)
   }
+  unit = data[,1]
   data = data[,-1]
-  # data = scale(data)
+
   if(length(model$removeCol!=0))
     data = data[,-model$removeCol]
+
   for(i in 1:ncol(data))
     data[,i] = (data[,i]-model$scaleMean[i])/model$scaleStd[i]
+  if(model$numPastVal!=0){
+    counter = 0
+    data = foreach(i = 1:max(unit), .combine = 'rbind', .inorder = TRUE) %do% {
+      index = which(unit == i)
+      foreach(ii = 0:model$numPastVal, .combine = 'cbind', .inorder = TRUE) %do% {
+        if(ii == 0)
+          unname(data[index[1:(length(index)-model$numPastVal)],])
+        else if(ii == model$numPastVal)
+          unname(data[index[(model$numPastVal+1):length(index)],])
+        else
+          unname(data[index[ii:(length(index)-model$numPastVal + ii)],])
+      }
+    }
+    colnames(data) = foreach(i = 1:ncol(data), .combine = 'c',.inorder = TRUE) %do% {
+      paste("V",i,sep="")
+    }
+  }
+
+  data = scale(data)
 
   pred.mlp = as.data.frame(h2o.predict(model$models$mlp,as.h2o(data)))
   pred.mlp = pred.mlp$predict
@@ -202,32 +247,20 @@ phmScoring <- function(predRUL, actualRUL){
 # ensModel2 = createModel.ens.h2o(FD2)
 # ensModel3 = createModel.ens.h2o(FD3)
 # ensModel4 = createModel.ens.h2o(FD4)
+# predTr1_Te1 = predict.ens.h2o(test1[i1,],ensModel1)
+# predTr2_Te2 = predict.ens.h2o(test2[i2,],ensModel2)
+# predTr3_Te3 = predict.ens.h2o(test3[i3,],ensModel3)
+# predTr4_Te4 = predict.ens.h2o(test4[i4,],ensModel4)
+
 # predTr1_Te1 = predict.ens.h2o(test1,ensModel1)
-# predTr2_Te1 = predict.ens.h2o(test1,ensModel2)
-# predTr3_Te1 = predict.ens.h2o(test1,ensModel3)
-# predTr4_Te1 = predict.ens.h2o(test1,ensModel4)
-#
 # predTr1_Te2 = predict.ens.h2o(test2,ensModel1)
+# predTr1_Te3 = predict.ens.h2o(test3,ensModel1)
+# predTr1_Te4 = predict.ens.h2o(test4,ensModel1)
+
+# predTr1_Te1 = predict.ens.h2o(test1,ensModel1)
 # predTr2_Te2 = predict.ens.h2o(test2,ensModel2)
-# predTr3_Te2 = predict.ens.h2o(test2,ensModel3)
-# predTr4_Te2 = predict.ens.h2o(test2,ensModel4)
-#
-# predTr1_Te3 = predict.ens.h2o(test3,ensModel1)
-# predTr2_Te3 = predict.ens.h2o(test3,ensModel2)
 # predTr3_Te3 = predict.ens.h2o(test3,ensModel3)
-# predTr4_Te3 = predict.ens.h2o(test3,ensModel4)
-#
-# predTr1_Te4 = predict.ens.h2o(test4,ensModel1)
-# predTr2_Te4 = predict.ens.h2o(test4,ensModel2)
-# predTr3_Te4 = predict.ens.h2o(test4,ensModel3)
 # predTr4_Te4 = predict.ens.h2o(test4,ensModel4)
-
-# predTr1_Te1 = predict.ens.h2o(test1,ensModel1)
-# predTr1_Te2 = predict.ens.h2o(test2,ensModel1)
-# predTr1_Te3 = predict.ens.h2o(test3,ensModel1)
-# predTr1_Te4 = predict.ens.h2o(test4,ensModel1)
-
-
 # i = sapply(1:max(test2[,1]),function(x){
 #   w = which(test2[,1]==x)
 #   max(w)
@@ -241,4 +274,6 @@ phmScoring <- function(predRUL, actualRUL){
 #   }
 #   return(newRUL)
 # }
-
+mse <- function(actual, test){
+  sum((actual-test)^2)/length(actual)
+}
