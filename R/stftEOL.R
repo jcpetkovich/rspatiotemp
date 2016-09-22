@@ -82,7 +82,7 @@ createModel.h2o.logic <- function(data,groupSize,degradStartPercent,scale){
     scaleBy = attr(fftloess,"scaled:scale")
     return(list(model = fftloess.dl,groupSize = groupSize, scale = scale, center = center, scaleBy = scaleBy))
   }
-    return(list(model = fftloess.dl,groupSize = groupSize, scale = scale))
+  return(list(model = fftloess.dl,groupSize = groupSize, scale = scale))
 }
 
 #' Create a deep learning model of smoothed stft data with degradation starting at a chosen percentage to predict a chosen number of output states
@@ -274,6 +274,21 @@ plot.fftloess <- function(data, groupSize){
   lines(lo3,col= "green")
 }
 
+#' @export
+status.logic <- function(pred.logic){
+  greenEnd = (which(pred.logic==FALSE)[1])-1
+  yellowEnd = greenEnd+1+which(rev(pred.logic)==TRUE)[1]
+
+  status = list(greenEnd = greenEnd, yellowEnd = yellowEnd)
+  return(status)
+}
+
+#' @export
+plot.data.status <- function(data,status,groupSize,ylab){
+  plot.ts(data[1:((status$greenEnd)*groupSize)], xlim=c(0,length(data)), ylim=c(min(data),max(data)),col="green",xlab="Time(s)",ylab=ylab)
+  lines(y=data[(((status$greenEnd)*groupSize)+1):((status$yellowEnd)*groupSize)],x=(((status$greenEnd)*groupSize)+1):((status$yellowEnd)*groupSize), col="yellow")
+  lines(y=data[(((status$yellowEnd)*groupSize)+1):length(data)],x=(((status$yellowEnd)*groupSize)+1):length(data), col="red")
+}
 #' #' @export
 #' saveModel.fftloess <- function(data.path){
 #'
@@ -290,9 +305,9 @@ plot.fftloess <- function(data, groupSize){
 #'   load(paste(data.path,"bearingDataH1_3.Rd",sep=""))
 #'   h1_3=horizontal
 #'   h1_3=as.numeric(unlist(h1_3))
-#'   load(paste(data.path,"bearingDataH1_4.Rd",sep=""))
-#'   h1_4=horizontal
-#'   h1_4=as.numeric(unlist(h1_4))
+  # load(paste(data.path,"bearingDataH1_4.Rd",sep=""))
+  # h1_4=horizontal
+  # h1_4=as.numeric(unlist(h1_4))
 #'   load(paste(data.path,"bearingDataH1_5.Rd",sep=""))
 #'   h1_5=horizontal
 #'   h1_5=as.numeric(unlist(h1_5))
@@ -919,3 +934,46 @@ plot.fftloess <- function(data, groupSize){
 # predH1_7 = as.data.frame(predH1_7)$predict
 # save(predH1_7, file = "allpredH1_7.Rd")
 #
+
+# fftloessH1_1 = fftloess.rul(h1_1,2048,FALSE,0.8)
+# fftloessH1_2 = fftloess.rul(h1_2,2048,FALSE,0.8)
+# fftloessH1_3 = fftloess.rul(h1_3,2048,FALSE,0.8)
+# fftloessH1_4 = fftloess.rul(h1_4,2048,FALSE,0.8)
+# fftloessH1_5 = fftloess.rul(h1_5,2048,FALSE,0.8)
+# fftloessH1_6 = fftloess.rul(h1_6,2048,FALSE,0.8)
+# fftloessH1_7 = fftloess.rul(h1_7,2048,FALSE,0.8)
+
+# library(h2o)
+# library(doMC)
+# library(foreach)
+# h2o.init()
+#
+#
+# #load data
+# data.path = "FEMTO Bearing Data/"
+# load(paste(data.path,"bearingDataH1_2.Rd",sep=""))
+# trainData = as.numeric(unlist(horizontal))
+# load(paste(data.path,"bearingDataH1_4.Rd",sep=""))
+# test1_4 = as.numeric(unlist(horizontal))
+# load(paste(data.path,"bearingDataH1_7.Rd",sep=""))
+# test1_7 = as.numeric(unlist(horizontal))
+# #create model from bearing1_2 data not scaled
+# modelH1_2_stft_F = createModel.h2o.logic(trainData,2048,0.8,FALSE)
+# #create model from bearing1_2 data scaled
+# modelH1_2_stft_T = createModel.h2o.logic(trainData,2048,0.8,TRUE)
+# #These EOLs are predicted using the bearing1_2 trained model
+# #EOL1_4 Not Scale.png
+# pred1_4_stft_F = predict.h2o.stft(test1_4,modelH1_2_stft_F)
+# #EOL1_4 Scale.png
+# pred1_4_stft_T = predict.h2o.stft(test1_4,modelH1_2_stft_T)
+# #EOL1_7 Not Scale.png
+# pred1_7_stft_F = predict.h2o.stft(test1_7,modelH1_2_stft_F)
+# #compute status for all EOL not scale
+# status1_4_F = status.logic(pred1_4_stft_F)
+# status1_4_T = status.logic(pred1_4_stft_T)
+# status1_7_F = status.logic(pred1_4_stft_F)
+# #plot graphs of EOL behaviour on data
+# plot.data.status(test1_4,status1_4_F,2048,"Bearing1_4 Acceleration")
+# plot.data.status(test1_4,status1_4_T,2048,"Bearing1_4 Acceleration")
+# plot.data.status(test1_7,status1_7_F,2048,"Bearing1_7 Acceleration")
+

@@ -49,18 +49,29 @@ validate.ens.h2o <- function(data, model, ensembleModel){
 #' @param inputDropout A fraction of the features for each training row to be omitted from training inorder to improve generalization (dimension sampling).
 #' @param numPastVal The number of time stamps in the past to consider when computing the RUL
 #' @return An ensemble model
-createModel.ens.h2o <- function(data, trainingSplit = c(0.75,0.15,0.1),inputDropout = 0, numPastVal = 0){
+createModel.ens.h2o <- function(data, rulDegrad = 0, trainingSplit = c(0.75,0.15,0.1),inputDropout = 0, numPastVal = 0){
   # len = max(data[,1])
   inputCol = ncol(data)
 
   # rul = max(data[,1]) - data[,1]
   # rul = nrow(data):1
   rul = foreach(i = 1:max(data[,1]), .combine = 'c', .inorder = TRUE) %do% {
-    if(numPastVal!=0){
-      rev(data[which(data[,1]==i),2])[-(1:numPastVal)]
+    if(rulDegrad == 0){
+      if(numPastVal!=0){
+        rev(data[which(data[,1]==i),2])[-(1:numPastVal)]
+      }
+      else{
+        rev(data[which(data[,1]==i),2])
+      }
     }
     else{
-      rev(data[which(data[,1]==i),2])
+      if(numPastVal!=0){
+        r = rev(data[which(data[,1]==i),2])[-(1:numPastVal)]
+      }
+      else{
+        r = rev(data[which(data[,1]==i),2])
+        c(rep(max(r),as.integer(length(r)*rulDegrad)), seq(from = max(r), to = 0, length.out = length(r) - as.integer(length(r)*rulDegrad)))
+      }
     }
   }
 

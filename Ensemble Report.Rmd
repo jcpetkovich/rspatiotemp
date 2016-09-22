@@ -87,19 +87,38 @@ First test data set: 100 units, 0% dropout, 0 past values used, **MSE = 663.8576
 # library(ggplot2)
 # library(dplyr)
 # library(tidyr)
-# FD1 = read.table("TurboFanData/train_FD001.txt")
-# test1 = read.table("TurboFanData/test_FD001.txt")
-# ensModel1 = createModel.ens.h2o(FD1)
-# i = sapply(1:max(test1[,1]),function(x){
-#   w = which(test1[,1]==x)
-#   max(w)
-# })
-# Predicted = predict.ens.h2o(test1[i,],ensModel1)
-# Expected = as.numeric(unlist(read.table("TurboFanData/RUL_FD001.txt")))
-# Unit = 1:length(Predicted)
-# dat = data.frame(t = Unit, cbind(Predicted,Expected))
-# ggplot(dat %>% gather(Legend, value, -t)) + geom_line(aes(x = t, y = value, colour = Legend)) + theme(legend.position = "bottom") + labs(x = "Unit", y = "RUL")
+FD1 = read.table("TurboFanData/train_FD001.txt")
+test1 = read.table("TurboFanData/test_FD001.txt")
+ensModel1 = createModel.ens.h2o(FD1)
+i = sapply(1:max(test1[,1]),function(x){
+  w = which(test1[,1]==x)
+  max(w)
+})
+Predicted = predict.ens.h2o(test1[i,],ensModel1)
+Expected = as.numeric(unlist(read.table("TurboFanData/RUL_FD001.txt")))
+Unit = 1:length(Predicted)
+dat = data.frame(t = Unit, cbind(Predicted,Expected))
+ggplot(dat %>% gather(Legend, value, -t)) + geom_line(aes(x = t, y = value, colour = Legend)) + theme(legend.position = "bottom") + labs(x = "Unit", y = "RUL")
 ```
+FD1 = read.table("TurboFanData/train_FD001.txt")
+test1 = read.table("TurboFanData/test_FD001.txt")
+ensModel1 = createModel.ens.h2o(FD1)
+Predicted = predict.ens.h2o(test1,ensModel1)
+Expected = as.numeric(unlist(read.table("TurboFanData/RUL_FD001.txt")))
+Expected = foreach(i = 1:length(Expected), .combine = 'c', .inorder = TRUE) %do% {
+(length(which(test1[,1] == i))+Expected[i]-1):Expected[i]
+}
+Unit = 1:length(Predicted)
+dat = data.frame(t = Unit, cbind(Predicted,Expected))
+ggplot(dat %>% gather(Legend, value, -t)) + geom_line(aes(x = t, y = value, colour = Legend)) + theme(legend.position = "bottom") + labs(x = "Unit", y = "RUL")
+
+error = (Expected-Predicted)^2
+rmsError = foreach(i = 1:length(table(test1[,1])),.combine = 'c') %do% {
+  sum(error[which(test1[,1] == i)])/length(which(test1[,1]==i))
+}
+
+hist(rmsError, freq=FALSE)
+lines(density(rmsError), col="red")
 
 ![](result1_0_0.png)
 
